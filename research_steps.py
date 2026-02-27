@@ -21,7 +21,7 @@ def save_image(image, folder, filename):
 def research_steps():
     # Setup
     output_dir = "outputs_steps"
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     weight_dtype = torch.float32 # Using FP32 for stability as per previous optimizations
     
     # Files
