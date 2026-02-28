@@ -145,8 +145,9 @@ app = demo.app
 os.makedirs(args.output_dir, exist_ok=True)
 app.mount("/outputs", StaticFiles(directory=args.output_dir), name="outputs")
 
-async def tryon_api(request: Request):
+async def tryon_api(request):
     try:
+        from starlette.datastructures import FormData
         form = await request.form()
         
         # Get files
@@ -169,13 +170,9 @@ async def tryon_api(request: Request):
         traceback.print_exc()
         return JSONResponse(status_code=500, content={"status": "error", "message": f"Server Error: {str(e)}"})
 
-# Create a separate Starlette app for the API to completely bypass FastAPI validation
-api_app = Starlette(routes=[
-    Route("/tryon", tryon_api, methods=["POST"])
-])
-
-# Mount the Starlette app onto the Gradio FastAPI app
-app.mount("/api", api_app)
+# Manually insert a raw Starlette Route at the very top of the routing table.
+# This COMPLETELY bypasses FastAPI's internal 'APIRoute' and its body validation.
+app.router.routes.insert(0, Route("/api/tryon", tryon_api, methods=["POST"]))
 
 if __name__ == "__main__":
     # Launch Gradio with sharing enabled
