@@ -3,1085 +3,354 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WearCast — Virtual Try-On</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<title>WearCast — Easy Virtual Try-On</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0a0a0f;
-    --surface: #13131a;
-    --card: #1a1a24;
-    --border: #2a2a3a;
-    --accent: #c8a96e;
-    --accent2: #7c6bf0;
-    --text: #f0eee8;
-    --muted: #7a7a8a;
+    --bg: #050508;
+    --card: #11111a;
+    --accent: #7c6bf0;
+    --text: #ffffff;
+    --muted: #888899;
+    --border: #222233;
     --success: #4ecb87;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Outfit', sans-serif;
     background: var(--bg);
     color: var(--text);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  /* NAV */
-  nav {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 18px 36px;
-    border-bottom: 1px solid var(--border);
-    background: rgba(10,10,15,0.8);
-    backdrop-filter: blur(12px);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-
-  .logo {
-    font-family: 'Playfair Display', serif;
-    font-size: 22px;
-    letter-spacing: 0.04em;
-    color: var(--accent);
-  }
-
-  .logo span { color: var(--text); }
-
-  nav .nav-actions {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-  }
-
-  .btn-ghost {
-    background: none;
-    border: 1px solid var(--border);
-    color: var(--muted);
-    padding: 8px 18px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 13px;
-    font-family: 'DM Sans', sans-serif;
-    transition: all 0.2s;
-  }
-
-  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
-
-  .btn-primary {
-    background: var(--accent);
-    border: none;
-    color: #0a0a0f;
-    padding: 9px 22px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 500;
-    font-family: 'DM Sans', sans-serif;
-    transition: all 0.2s;
-  }
-
-  .btn-primary:hover { background: #d9bc85; transform: translateY(-1px); }
-
-  /* MAIN LAYOUT */
-  .workspace {
-    display: grid;
-    grid-template-columns: 300px 1fr 300px;
-    height: calc(100vh - 61px);
-    overflow: hidden;
-  }
-
-  /* SIDEBAR */
-  .sidebar {
-    background: var(--surface);
-    border-right: 1px solid var(--border);
     display: flex;
     flex-direction: column;
-    overflow: hidden;
-  }
-
-  .sidebar-right {
-    border-right: none;
-    border-left: 1px solid var(--border);
-  }
-
-  .sidebar-header {
-    padding: 20px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
     align-items: center;
-    justify-content: space-between;
+    min-height: 100vh;
+    padding: 40px 20px;
   }
 
-  .sidebar-title {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
+  header {
+    text-align: center;
+    margin-bottom: 40px;
+    animation: fadeInDown 0.6s ease;
+  }
+
+  h1 {
+    font-size: 32px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+
+  h1 span { color: var(--accent); }
+
+  p.subtitle {
     color: var(--muted);
-    font-weight: 500;
+    font-size: 16px;
   }
 
-  .badge {
-    background: var(--accent2);
-    color: #fff;
-    font-size: 10px;
-    padding: 2px 8px;
-    border-radius: 20px;
-    font-weight: 500;
+  .main-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    width: 100%;
+    max-width: 500px;
+    padding: 32px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    animation: fadeInUp 0.6s ease;
   }
 
-  .sidebar-content {
-    flex: 1;
-    overflow-y: auto;
-    padding: 16px;
+  .upload-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
   }
 
-  .sidebar-content::-webkit-scrollbar { width: 4px; }
-  .sidebar-content::-webkit-scrollbar-track { background: transparent; }
-  .sidebar-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-  /* UPLOAD ZONE */
-  .upload-zone {
+  .upload-box {
     border: 2px dashed var(--border);
-    border-radius: 12px;
-    padding: 28px 20px;
+    border-radius: 16px;
+    padding: 20px 10px;
     text-align: center;
     cursor: pointer;
-    transition: all 0.25s;
-    margin-bottom: 20px;
+    transition: all 0.3s;
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     position: relative;
     overflow: hidden;
   }
 
-  .upload-zone::before {
-    content: '';
+  .upload-box:hover { border-color: var(--accent); background: rgba(124,107,240,0.05); }
+
+  .upload-box img {
     position: absolute;
     inset: 0;
-    background: radial-gradient(circle at center, rgba(200,169,110,0.05) 0%, transparent 70%);
-    opacity: 0;
-    transition: opacity 0.3s;
-  }
-
-  .upload-zone:hover { border-color: var(--accent); }
-  .upload-zone:hover::before { opacity: 1; }
-
-  .upload-icon {
-    font-size: 32px;
-    margin-bottom: 10px;
-    display: block;
-  }
-
-  .upload-label {
-    font-size: 13px;
-    color: var(--muted);
-    line-height: 1.5;
-  }
-
-  .upload-label strong { color: var(--accent); }
-
-  .upload-preview {
     width: 100%;
-    aspect-ratio: 3/4;
+    height: 100%;
     object-fit: cover;
-    border-radius: 10px;
-    display: block;
-    margin-bottom: 12px;
-    border: 1px solid var(--border);
+    z-index: 2;
   }
 
-  /* GARMENT GRID */
-  .section-label {
+  .upload-icon { font-size: 24px; margin-bottom: 8px; z-index: 1; }
+  .upload-text { font-size: 13px; color: var(--muted); z-index: 1; }
+
+  .btn-tryon {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--accent) 0%, #9d8ff5 100%);
+    border: none;
+    border-radius: 12px;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-tryon:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(124,107,240,0.3); }
+  .btn-tryon:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* PROGRESS BAR */
+  .progress-container {
+    margin-top: 24px;
+    display: none;
+  }
+
+  .progress-text {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    margin-bottom: 8px;
+    color: var(--muted);
+  }
+
+  .progress-bar-track {
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+
+  .time-estimate { color: var(--accent); font-weight: 600; }
+
+  /* RESULT AREA */
+  .result-area {
+    margin-top: 32px;
+    display: none;
+    text-align: center;
+    animation: fadeIn 0.8s ease;
+  }
+
+  .result-img-wrapper {
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    margin-top: 16px;
+  }
+
+  .result-img-wrapper img {
+    width: 100%;
+    display: block;
+  }
+
+  .badge-new {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: var(--success);
+    color: #000;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+    text-transform: uppercase;
+  }
+
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+
+  footer {
+    margin-top: auto;
+    padding: 40px;
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  .step-label {
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.1em;
     color: var(--muted);
-    margin-bottom: 12px;
-    font-weight: 500;
-  }
-
-  .garment-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 20px;
-  }
-
-  .garment-card {
-    border-radius: 10px;
-    overflow: hidden;
-    cursor: pointer;
-    border: 2px solid transparent;
-    transition: all 0.2s;
-    background: var(--card);
-    position: relative;
-  }
-
-  .garment-card:hover { border-color: var(--border); transform: translateY(-2px); }
-  .garment-card.selected { border-color: var(--accent); }
-
-  .garment-card.selected::after {
-    content: '✓';
-    position: absolute;
-    top: 6px;
-    right: 6px;
-    background: var(--accent);
-    color: #000;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 10px;
-    font-weight: bold;
-  }
-
-  .garment-img {
-    width: 100%;
-    aspect-ratio: 3/4;
-    object-fit: cover;
+    margin-bottom: 8px;
     display: block;
-    background: var(--card);
+    text-align: left;
   }
-
-  .garment-info {
-    padding: 8px 10px;
-  }
-
-  .garment-name { font-size: 11px; color: var(--text); }
-  .garment-price { font-size: 11px; color: var(--accent); margin-top: 2px; }
-
-  /* CENTER CANVAS */
-  .canvas-area {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: var(--bg);
-    position: relative;
-    overflow: hidden;
-  }
-
-  .canvas-area::before {
-    content: '';
-    position: absolute;
-    top: -200px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 600px;
-    height: 600px;
-    background: radial-gradient(circle, rgba(124,107,240,0.06) 0%, transparent 70%);
-    pointer-events: none;
-  }
-
-  .tryon-stage {
-    position: relative;
-    width: 360px;
-    height: 480px;
-    border-radius: 20px;
-    overflow: hidden;
-    background: var(--card);
-    border: 1px solid var(--border);
-    box-shadow: 0 40px 80px rgba(0,0,0,0.5);
-  }
-
-  .tryon-bg {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(160deg, #1e1e2e 0%, #13131a 100%);
-  }
-
-  .person-placeholder {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-  }
-
-  .person-silhouette {
-    width: 160px;
-    height: 320px;
-    opacity: 0.08;
-    filter: blur(1px);
-  }
-
-  .empty-hint {
-    position: absolute;
-    bottom: 30px;
-    left: 50%;
-    transform: translateX(-50%);
-    text-align: center;
-    white-space: nowrap;
-  }
-
-  .empty-hint p { font-size: 12px; color: var(--muted); }
-
-  /* PROCESSING OVERLAY */
-  .processing-overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(10,10,15,0.85);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    border-radius: 20px;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s;
-    z-index: 10;
-  }
-
-  .processing-overlay.active { opacity: 1; pointer-events: all; }
-
-  .spinner {
-    width: 48px;
-    height: 48px;
-    border: 3px solid var(--border);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .processing-text {
-    font-size: 14px;
-    color: var(--text);
-    text-align: center;
-  }
-
-  .processing-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
-
-  /* RESULT IMAGE */
-  .result-image {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    opacity: 0;
-    transition: opacity 0.6s ease;
-    border-radius: 20px;
-  }
-
-  .result-image.visible { opacity: 1; }
-
-  /* CONTROLS BAR */
-  .controls-bar {
-    display: flex;
-    gap: 10px;
-    margin-top: 20px;
-    align-items: center;
-  }
-
-  .btn-icon {
-    width: 42px;
-    height: 42px;
-    border-radius: 10px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    color: var(--muted);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-    transition: all 0.2s;
-  }
-
-  .btn-icon:hover { border-color: var(--accent); color: var(--accent); }
-
-  .btn-tryon {
-    height: 42px;
-    padding: 0 28px;
-    background: linear-gradient(135deg, var(--accent2) 0%, #9d8ff5 100%);
-    border: none;
-    border-radius: 10px;
-    color: #fff;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .btn-tryon:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(124,107,240,0.4); }
-  .btn-tryon:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-
-  /* RIGHT PANEL */
-  .result-panel { padding: 16px; }
-
-  .model-info-card {
-    background: var(--card);
-    border-radius: 12px;
-    padding: 16px;
-    border: 1px solid var(--border);
-    margin-bottom: 16px;
-  }
-
-  .model-info-card h4 {
-    font-family: 'Playfair Display', serif;
-    font-size: 15px;
-    margin-bottom: 6px;
-  }
-
-  .model-tag {
-    display: inline-block;
-    background: rgba(124,107,240,0.15);
-    color: var(--accent2);
-    font-size: 10px;
-    padding: 3px 10px;
-    border-radius: 20px;
-    font-weight: 500;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    margin-bottom: 12px;
-  }
-
-  .model-stats {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-
-  .stat-item { }
-  .stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
-  .stat-value { font-size: 13px; color: var(--text); margin-top: 2px; }
-
-  /* FIT SCORE */
-  .fit-score-card {
-    background: var(--card);
-    border-radius: 12px;
-    padding: 16px;
-    border: 1px solid var(--border);
-    margin-bottom: 16px;
-  }
-
-  .fit-score-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 14px;
-  }
-
-  .fit-title { font-size: 13px; font-weight: 500; }
-
-  .fit-score-num {
-    font-family: 'Playfair Display', serif;
-    font-size: 28px;
-    color: var(--success);
-  }
-
-  .fit-bars { display: flex; flex-direction: column; gap: 8px; }
-
-  .fit-bar-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .fit-bar-label { font-size: 11px; color: var(--muted); width: 60px; }
-
-  .fit-bar-track {
-    flex: 1;
-    height: 4px;
-    background: var(--border);
-    border-radius: 2px;
-    overflow: hidden;
-  }
-
-  .fit-bar-fill {
-    height: 100%;
-    border-radius: 2px;
-    background: linear-gradient(90deg, var(--accent2), var(--accent));
-    transition: width 1s ease;
-  }
-
-  .fit-bar-val { font-size: 11px; color: var(--text); width: 28px; text-align: right; }
-
-  /* SIZE SELECTOR */
-  .size-selector { margin-bottom: 16px; }
-
-  .size-options {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-top: 10px;
-  }
-
-  .size-btn {
-    width: 40px;
-    height: 40px;
-    border-radius: 8px;
-    background: var(--card);
-    border: 1px solid var(--border);
-    color: var(--muted);
-    font-size: 12px;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-family: 'DM Sans', sans-serif;
-  }
-
-  .size-btn:hover { border-color: var(--accent); color: var(--accent); }
-  .size-btn.active { background: var(--accent); border-color: var(--accent); color: #000; font-weight: 600; }
-
-  /* SAVE ACTIONS */
-  .save-actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-
-  .btn-save {
-    padding: 10px;
-    border-radius: 10px;
-    border: 1px solid var(--border);
-    background: var(--card);
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 12px;
-    cursor: pointer;
-    transition: all 0.2s;
-    text-align: center;
-  }
-
-  .btn-save:hover { border-color: var(--accent); color: var(--accent); }
-
-  .btn-save-main {
-    grid-column: span 2;
-    background: var(--accent);
-    border: none;
-    color: #000;
-    font-weight: 500;
-    padding: 12px;
-    border-radius: 10px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 13px;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .btn-save-main:hover { background: #d9bc85; }
-
-  /* DIVIDER */
-  .divider { height: 1px; background: var(--border); margin: 16px 0; }
-
-  /* STATUS BAR */
-  .status-bar {
-    position: absolute;
-    top: 14px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(19,19,26,0.9);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 6px 16px;
-    font-size: 11px;
-    color: var(--muted);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    backdrop-filter: blur(8px);
-    white-space: nowrap;
-  }
-
-  .status-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--success);
-    animation: pulse 2s infinite;
-  }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
-  }
-
-  /* COMPARE SLIDER */
-  .compare-hint {
-    font-size: 11px;
-    color: var(--muted);
-    text-align: center;
-    margin-top: 8px;
-    opacity: 0.7;
-  }
-
-  /* CATEGORY TABS */
-  .cat-tabs {
-    display: flex;
-    gap: 4px;
-    margin-bottom: 14px;
-    background: var(--card);
-    padding: 4px;
-    border-radius: 10px;
-  }
-
-  .cat-tab {
-    flex: 1;
-    padding: 7px 4px;
-    border-radius: 7px;
-    background: none;
-    border: none;
-    color: var(--muted);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 11px;
-    cursor: pointer;
-    transition: all 0.2s;
-    text-align: center;
-  }
-
-  .cat-tab.active { background: var(--surface); color: var(--text); }
-
-  /* Demo garment colors for placeholder images */
-  .g1 { background: linear-gradient(135deg, #2c2c3e, #3d3d54); }
-  .g2 { background: linear-gradient(135deg, #3e2c2c, #543d3d); }
-  .g3 { background: linear-gradient(135deg, #2c3e2c, #3d543d); }
-  .g4 { background: linear-gradient(135deg, #3e3a2c, #54503d); }
-  .g5 { background: linear-gradient(135deg, #2c3a3e, #3d5054); }
-  .g6 { background: linear-gradient(135deg, #3a2c3e, #503d54); }
-
-  .garment-placeholder {
-    width: 100%;
-    aspect-ratio: 3/4;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 28px;
-  }
-
-  /* Animations */
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .workspace { animation: fadeIn 0.4s ease; }
 </style>
 </head>
 <body>
 
-<nav>
-  <div class="logo">Wear<span>Cast</span></div>
-  <div style="display:flex;align-items:center;gap:20px;">
-    <span style="font-size:12px;color:var(--muted);">Powered by CatVTON</span>
-    <span style="font-size:12px;color:var(--border)">|</span>
-    <span style="font-size:12px;color:var(--muted)">My Wardrobe</span>
-    <span style="font-size:12px;color:var(--muted)">History</span>
-  </div>
-  <div class="nav-actions">
-    <button class="btn-ghost">↑ Share</button>
-    <button class="btn-primary">✦ Pro</button>
-  </div>
-</nav>
+<header>
+  <h1>Wear<span>Cast</span></h1>
+  <p class="subtitle">Virtual try-on made incredibly simple.</p>
+</header>
 
-<div class="workspace">
-
-  <!-- LEFT SIDEBAR: Person Upload + Garments -->
-  <div class="sidebar">
-    <div class="sidebar-header">
-      <span class="sidebar-title">Your Model</span>
+<div class="main-card">
+  <span class="step-label">1. Upload Photos</span>
+  <div class="upload-grid">
+    <div class="upload-box" onclick="document.getElementById('pInput').click()" id="pBox">
+      <div class="upload-icon">👤</div>
+      <div class="upload-text">You</div>
+      <input type="file" id="pInput" hidden accept="image/*" onchange="hPreview(this, 'pBox')">
     </div>
-    <div class="sidebar-content">
-
-      <!-- Person Upload -->
-      <div class="upload-zone" id="personUpload" onclick="document.getElementById('personInput').click()">
-        <span class="upload-icon">🧍</span>
-        <div class="upload-label">
-          <strong>Upload your photo</strong><br>
-          Full body, front-facing<br>JPG, PNG up to 10MB
-        </div>
-        <input type="file" id="personInput" accept="image/*" style="display:none" onchange="previewPerson(this)">
-      </div>
-
-      <div class="divider"></div>
-
-      <!-- Garment Section -->
-      <div class="section-label">Garment Catalog</div>
-
-      <div class="cat-tabs">
-        <button class="cat-tab active" onclick="switchCat(this,'tops')">Tops</button>
-        <button class="cat-tab" onclick="switchCat(this,'bottoms')">Bottoms</button>
-        <button class="cat-tab" onclick="switchCat(this,'full')">Full</button>
-      </div>
-
-      <div class="garment-grid" id="garmentGrid">
-        <!-- Garment cards -->
-        <div class="garment-card selected" onclick="selectGarment(this)">
-          <div class="garment-placeholder g1">👔</div>
-          <div class="garment-info">
-            <div class="garment-name">Slim Oxford</div>
-            <div class="garment-price">$89</div>
-          </div>
-        </div>
-        <div class="garment-card" onclick="selectGarment(this)">
-          <div class="garment-placeholder g2">🧥</div>
-          <div class="garment-info">
-            <div class="garment-name">Wool Blazer</div>
-            <div class="garment-price">$245</div>
-          </div>
-        </div>
-        <div class="garment-card" onclick="selectGarment(this)">
-          <div class="garment-placeholder g3">👕</div>
-          <div class="garment-info">
-            <div class="garment-name">Linen Tee</div>
-            <div class="garment-price">$45</div>
-          </div>
-        </div>
-        <div class="garment-card" onclick="selectGarment(this)">
-          <div class="garment-placeholder g4">🧣</div>
-          <div class="garment-info">
-            <div class="garment-name">Knit Jumper</div>
-            <div class="garment-price">$130</div>
-          </div>
-        </div>
-        <div class="garment-card" onclick="selectGarment(this)">
-          <div class="garment-placeholder g5">🥼</div>
-          <div class="garment-info">
-            <div class="garment-name">Trench Coat</div>
-            <div class="garment-price">$320</div>
-          </div>
-        </div>
-        <div class="garment-card" onclick="selectGarment(this)">
-          <div class="garment-placeholder g6">🧤</div>
-          <div class="garment-info">
-            <div class="garment-name">Puffer Vest</div>
-            <div class="garment-price">$185</div>
-          </div>
-        </div>
-      </div>
-
-      <button class="btn-ghost" style="width:100%;margin-top:4px;font-size:12px;">+ Upload Custom Garment</button>
-
+    <div class="upload-box" onclick="document.getElementById('gInput').click()" id="gBox">
+      <div class="upload-icon">👕</div>
+      <div class="upload-text">Cloth</div>
+      <input type="file" id="gInput" hidden accept="image/*" onchange="hPreview(this, 'gBox')">
     </div>
   </div>
 
-  <!-- CENTER: Try-On Stage -->
-  <div class="canvas-area">
+  <button class="btn-tryon" id="runBtn" onclick="run()">
+    Start Try-On
+  </button>
 
-    <div class="status-bar">
-      <div class="status-dot"></div>
-      CatVTON Model · Ready
+  <div class="progress-container" id="pContainer">
+    <div class="progress-text">
+      <span id="pStatus">Processing...</span>
+      <span class="time-estimate" id="pTime">Est. 12s</span>
     </div>
-
-    <div class="tryon-stage">
-      <div class="tryon-bg"></div>
-
-      <!-- Empty state -->
-      <div class="person-placeholder" id="emptyState">
-        <svg class="person-silhouette" viewBox="0 0 100 200" fill="white" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="50" cy="25" r="20"/>
-          <rect x="25" y="55" width="50" height="80" rx="8"/>
-          <rect x="10" y="55" width="18" height="70" rx="6"/>
-          <rect x="72" y="55" width="18" height="70" rx="6"/>
-          <rect x="28" y="130" width="18" height="65" rx="6"/>
-          <rect x="54" y="130" width="18" height="65" rx="6"/>
-        </svg>
-        <div class="empty-hint">
-          <p>Upload a photo and select a garment<br>to begin virtual try-on</p>
-        </div>
-      </div>
-
-      <!-- Processing Overlay -->
-      <div class="processing-overlay" id="processingOverlay">
-        <div class="spinner"></div>
-        <div class="processing-text">
-          Generating Try-On
-          <div class="processing-sub">CatVTON warping garment to your body...</div>
-        </div>
-      </div>
-
-      <!-- Result (hidden by default, shown after generation) -->
-      <img class="result-image" id="resultImg" src="" alt="Try-on result">
-    </div>
-
-    <div class="controls-bar">
-      <button class="btn-icon" title="Zoom In">🔍</button>
-      <button class="btn-icon" title="Compare">⇄</button>
-      <button class="btn-icon" title="Rotate">↻</button>
-      <button class="btn-tryon" id="tryonBtn" onclick="runTryon()">
-        ✦ Try On
-      </button>
-      <button class="btn-icon" title="Reset">✕</button>
-    </div>
-    <div class="compare-hint">Click "Try On" to generate virtual fitting</div>
-
-  </div>
-
-  <!-- RIGHT SIDEBAR: Results + Fit Score -->
-  <div class="sidebar sidebar-right">
-    <div class="sidebar-header">
-      <span class="sidebar-title">Fit Analysis</span>
-      <span class="badge">AI</span>
-    </div>
-    <div class="sidebar-content result-panel">
-
-      <!-- Model Info -->
-      <div class="model-info-card">
-        <span class="model-tag">CatVTON Backbone</span>
-        <h4>Slim Oxford Shirt</h4>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:12px;">Brand X · SKU #OXF-2042-BLU</div>
-        <div class="model-stats">
-          <div class="stat-item">
-            <div class="stat-label">Category</div>
-            <div class="stat-value">Upper Body</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-label">Material</div>
-            <div class="stat-value">100% Cotton</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-label">Style</div>
-            <div class="stat-value">Formal</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-label">Fit Type</div>
-            <div class="stat-value">Slim</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Size Selector -->
-      <div class="size-selector">
-        <div class="section-label">Select Size</div>
-        <div class="size-options">
-          <button class="size-btn" onclick="selectSize(this)">XS</button>
-          <button class="size-btn" onclick="selectSize(this)">S</button>
-          <button class="size-btn active" onclick="selectSize(this)">M</button>
-          <button class="size-btn" onclick="selectSize(this)">L</button>
-          <button class="size-btn" onclick="selectSize(this)">XL</button>
-        </div>
-      </div>
-
-      <!-- Fit Score Card -->
-      <div class="fit-score-card">
-        <div class="fit-score-header">
-          <span class="fit-title">Predicted Fit Score</span>
-          <span class="fit-score-num" id="fitScore">—</span>
-        </div>
-        <div class="fit-bars" id="fitBars">
-          <div class="fit-bar-row">
-            <span class="fit-bar-label">Shoulders</span>
-            <div class="fit-bar-track"><div class="fit-bar-fill" style="width:0%" id="bar1"></div></div>
-            <span class="fit-bar-val" id="val1">—</span>
-          </div>
-          <div class="fit-bar-row">
-            <span class="fit-bar-label">Chest</span>
-            <div class="fit-bar-track"><div class="fit-bar-fill" style="width:0%" id="bar2"></div></div>
-            <span class="fit-bar-val" id="val2">—</span>
-          </div>
-          <div class="fit-bar-row">
-            <span class="fit-bar-label">Length</span>
-            <div class="fit-bar-track"><div class="fit-bar-fill" style="width:0%" id="bar3"></div></div>
-            <span class="fit-bar-val" id="val3">—</span>
-          </div>
-          <div class="fit-bar-row">
-            <span class="fit-bar-label">Waist</span>
-            <div class="fit-bar-track"><div class="fit-bar-fill" style="width:0%" id="bar4"></div></div>
-            <span class="fit-bar-val" id="val4">—</span>
-          </div>
-        </div>
-        <div id="fitHint" style="font-size:11px;color:var(--muted);text-align:center;margin-top:12px;">Run try-on to see fit analysis</div>
-      </div>
-
-      <div class="divider"></div>
-
-      <!-- Save Actions -->
-      <div class="section-label" style="margin-bottom:10px;">Save & Share</div>
-      <div class="save-actions">
-        <button class="btn-save">♡ Wishlist</button>
-        <button class="btn-save">⤓ Download</button>
-        <button class="btn-save-main">Add to Cart — $89</button>
-      </div>
-
-      <div class="divider"></div>
-
-      <!-- Generation History -->
-      <div class="section-label">Recent Tries</div>
-      <div id="historyList" style="display:flex;flex-direction:column;gap:8px;">
-        <div style="font-size:11px;color:var(--muted);text-align:center;padding:12px;">No history yet</div>
-      </div>
-
+    <div class="progress-bar-track">
+      <div class="progress-bar-fill" id="pFill"></div>
     </div>
   </div>
-
 </div>
 
+<div class="result-area" id="rArea">
+  <span class="step-label">2. Your Result</span>
+  <div class="result-img-wrapper">
+    <span class="badge-new">Perfect Fit</span>
+    <img src="" id="rImg" alt="Result">
+  </div>
+  <button class="btn-tryon" style="margin-top:16px; background:#222; border:1px solid var(--border);" onclick="location.reload()">
+    Try Another
+  </button>
+</div>
+
+<footer>
+  Powered by CatVTON AI · Stable Diffusion Pipeline
+</footer>
+
 <script>
-  let personFile = null;
-  let garmentFile = null;
-  let currentClothType = "upper";
+  let pFile = null;
+  let gFile = null;
 
-  // Garment selection
-  function selectGarment(card) {
-    document.querySelectorAll('.garment-card').forEach(c => c.classList.remove('selected'));
-    card.classList.add('selected');
-    // For demo/catalog garments, we'll simulate them as 'ready'
-    // In a real app, these would have server-side IDs or paths
-    garmentFile = "catalog"; 
-  }
-
-  // Size selection
-  function selectSize(btn) {
-    document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-  }
-
-  // Category tabs
-  function switchCat(tab, cat) {
-    document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    currentClothType = cat === 'bottoms' ? 'lower' : (cat === 'full' ? 'overall' : 'upper');
-  }
-
-  // Person preview
-  function previewPerson(input) {
+  function hPreview(input, boxId) {
     const file = input.files[0];
     if (!file) return;
-    personFile = file;
+    if (boxId === 'pBox') pFile = file; else gFile = file;
+
     const reader = new FileReader();
     reader.onload = e => {
-      const zone = document.getElementById('personUpload');
-      zone.innerHTML = `<img src="${e.target.result}" class="upload-preview" style="max-height:200px;object-fit:cover;">
-        <div style="font-size:11px;color:var(--success);text-align:center;margin-top:8px;">✓ Photo ready</div>
-        <input type="file" id="personInput" accept="image/*" style="display:none" onchange="previewPerson(this)">`;
+      const box = document.getElementById(boxId);
+      const existingImg = box.querySelector('img');
+      if (existingImg) existingImg.src = e.target.result;
+      else {
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        box.appendChild(img);
+      }
     };
     reader.readAsDataURL(file);
   }
 
-  // Custom garment upload
-  function uploadCustomGarment(input) {
-    const file = input.files[0];
-    if (!file) return;
-    garmentFile = file;
-    // Add to grid temporarily or just mark as selected
-    alert("Custom garment loaded: " + file.name);
-  }
-
-  // Real Try-on Integration
-  async function runTryon() {
-    if (!personFile) {
-      alert("Please upload your photo first.");
+  async function run() {
+    if (!pFile || !gFile) {
+      alert("Please upload both photos.");
       return;
     }
-    
-    // For demo purposes, if no garment uploaded, we'll use a placeholder or error
-    if (!garmentFile) {
-        alert("Please select or upload a garment.");
-        return;
-    }
 
-    const btn = document.getElementById('tryonBtn');
-    const overlay = document.getElementById('processingOverlay');
-    
+    const btn = document.getElementById('runBtn');
+    const pBar = document.getElementById('pContainer');
+    const pFill = document.getElementById('pFill');
+    const pTime = document.getElementById('pTime');
+    const pStatus = document.getElementById('pStatus');
+
     btn.disabled = true;
-    overlay.classList.add('active');
-
-    // Update status labels
-    const sub = document.querySelector('.processing-sub');
-    sub.textContent = 'Initializing CatVTON pipeline...';
+    pBar.style.display = 'block';
 
     const formData = new FormData();
-    formData.append('person', personFile);
-    
-    // If it's a catalog item, we'd need a different approach, 
-    // but for this implementation we assume the user uploads or we have a file.
-    // Let's simplify: if it's "catalog", we'll just send a dummy for now 
-    // or tell the user to upload a custom one for the demo to work.
-    if (garmentFile === "catalog") {
-        // Mocking a catalog garment as a blob for the API to process if no real file
-        // In a real scenario, you'd send an ID and the server would load it.
-        // For now, let's just use the file if it exists.
-        alert("Please upload a custom garment for this demo instance to work with the real model!");
-        overlay.classList.remove('active');
-        btn.disabled = false;
-        return;
-    }
-    
-    formData.append('cloth', garmentFile);
-    formData.append('cloth_type', currentClothType);
-    formData.append('steps', 30); // Faster for web demo
+    formData.append('person', pFile);
+    formData.append('cloth', gFile);
+    formData.append('cloth_type', 'upper');
+    formData.append('steps', 30);
     formData.append('cfg', 2.5);
-    formData.append('seed', Math.floor(Math.random() * 10000));
+    formData.append('seed', Math.floor(Math.random() * 1000));
+
+    // Progress simulation
+    let progress = 0;
+    let secondsLeft = 15;
+    const interval = setInterval(() => {
+      if (progress < 90) {
+        progress += 5 + Math.random() * 5;
+        if (progress > 90) progress = 90;
+        pFill.style.width = progress + '%';
+        
+        if (secondsLeft > 1) {
+            secondsLeft--;
+            pTime.textContent = `Est. ${secondsLeft}s`;
+        }
+      }
+      
+      if (progress > 20) pStatus.textContent = "Warping garment...";
+      if (progress > 50) pStatus.textContent = "Blending textures...";
+      if (progress > 80) pStatus.textContent = "Final refining...";
+    }, 800);
 
     try {
-        const response = await fetch('/api/tryon', {
-            method: 'POST',
-            body: formData
-        });
+      const response = await fetch('/api/tryon', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await response.json();
 
-        const data = await response.json();
+      clearInterval(interval);
+      if (data.status === 'success') {
+        pFill.style.width = '100%';
+        pTime.textContent = "Finished!";
+        pStatus.textContent = "Complete";
         
-        if (data.status === 'success') {
-            applyResults(data);
-        } else {
-            alert("Error: " + data.message);
-        }
-    } catch (error) {
-        console.error("Tryon failed:", error);
-        alert("Server connection failed. Make sure app.py is running.");
-    } finally {
-        overlay.classList.remove('active');
+        setTimeout(() => {
+          document.getElementById('rImg').src = data.result_url;
+          document.getElementById('rArea').style.display = 'block';
+          document.querySelector('.main-card').style.opacity = '0.5';
+          document.querySelector('.main-card').style.pointerEvents = 'none';
+          window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'});
+        }, 500);
+      } else {
+        alert("Try-on failed: " + data.message);
         btn.disabled = false;
+      }
+    } catch (e) {
+      clearInterval(interval);
+      alert("Error connecting to server.");
+      btn.disabled = false;
     }
-  }
-
-  function applyResults(data) {
-    // Hide empty state
-    document.getElementById('emptyState').style.display = 'none';
-
-    // Update image
-    const result = document.getElementById('resultImg');
-    result.src = data.result_url;
-    result.style.display = 'block';
-    result.classList.add('visible');
-
-    // Update fit analysis
-    const fit = data.fit_analysis;
-    document.getElementById('fitHint').style.display = 'none';
-    const scoreEl = document.getElementById('fitScore');
-    scoreEl.textContent = fit.score + '%';
-    scoreEl.style.color = 'var(--success)';
-
-    const bars = [fit.shoulders, fit.chest, fit.length, fit.waist];
-    bars.forEach((s, i) => {
-      const bar = document.getElementById(`bar${i+1}`);
-      const val = document.getElementById(`val${i+1}`);
-      setTimeout(() => {
-        bar.style.width = s + '%';
-        val.textContent = s + '%';
-      }, i * 150);
-    });
-
-    addHistoryItem(data.result_url, fit.score);
-  }
-
-  function addHistoryItem(url, score) {
-    const list = document.getElementById('historyList');
-    if (list.innerHTML.includes("No history yet")) list.innerHTML = "";
-    
-    const item = document.createElement('div');
-    item.style.cssText = `display:flex;align-items:center;gap:10px;background:var(--card);padding:10px;border-radius:10px;border:1px solid var(--border);animation:fadeIn 0.3s ease;`;
-    item.innerHTML = `
-      <img src="${url}" style="width:36px;height:48px;object-fit:cover;border-radius:6px;flex-shrink:0;">
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:12px;color:var(--text);">Try-On Result</div>
-        <div style="font-size:10px;color:var(--muted);">Score ${score}% · ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
-      </div>
-      <div style="font-size:10px;color:var(--success);">✓</div>
-    `;
-    list.prepend(item);
   }
 </script>
 </body>
