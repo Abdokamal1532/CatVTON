@@ -582,10 +582,10 @@ function hideBanner() {
    PROCESSING STAGES
 ────────────────────────────────── */
 const STAGES = [
-  { label:'Detecting body keypoints…', pct:8,  secs:14, dotProg:'0%'  },
-  { label:'Warping garment to body…',  pct:35, secs:10, dotProg:'33%' },
-  { label:'Blending textures…',        pct:65, secs:6,  dotProg:'66%' },
-  { label:'Final refinement…',         pct:90, secs:3,  dotProg:'100%'},
+  { label:'Detecting body keypoints…', pct:8,  secs:21, dotProg:'0%'  },
+  { label:'Warping garment to body…',  pct:35, secs:21, dotProg:'33%' },
+  { label:'Blending textures…',        pct:65, secs:21,  dotProg:'66%' },
+  { label:'Final refinement…',         pct:90, secs:22,  dotProg:'100%'},
 ];
 
 function setStage(idx) {
@@ -668,14 +668,14 @@ window.startTryOn = async function() {
     stageIdx++;
     if (stageIdx < STAGES.length) setStage(stageIdx);
     else clearInterval(timerB);
-  }, 16000);
+  }, 21000);
 
   // Build FormData — matches app.py /api/tryon exactly
   const fd = new FormData();
   fd.append('person',     personFile);
   fd.append('cloth',      garmentFile);
   fd.append('cloth_type', clothType);
-  fd.append('steps',      10);
+  fd.append('steps',      25);
   fd.append('cfg',        2.5);
   fd.append('seed',       Math.floor(Math.random() * 9999));
 
@@ -693,15 +693,30 @@ window.startTryOn = async function() {
 
     const data = await res.json();
 
-    if (data.status === 'success') {
-      markAllDone();
-      resultUrl = data.result_url;
-      setTimeout(() => {
-        procCard.classList.remove('show');
-        hideBanner();
-        showResult(resultUrl);
-      }, 900);
-
+    if (data.status === 'queued') {
+      const jobId = data.job_id;
+      // Start Polling
+      let resultData = null;
+      while (true) {
+        await new Promise(r => setTimeout(r, 4000)); // Poll every 4 seconds
+        const pollRes = await fetch(`/api/wearcast/status/${jobId}`);
+        if (!pollRes.ok) continue; 
+        
+        resultData = await pollRes.json();
+        if (resultData.status === 'success') {
+          markAllDone();
+          resultUrl = resultData.result_url;
+          setTimeout(() => {
+            procCard.classList.remove('show');
+            hideBanner();
+            showResult(resultUrl);
+          }, 2000);
+          break;
+        } else if (resultData.status === 'error') {
+          throw new Error(resultData.message || 'Server processing error');
+        }
+        // If still processing, loop again
+      }
     } else {
       throw new Error(data.message || 'Unknown server error — check the terminal.');
     }
@@ -762,7 +777,7 @@ function shake(el) {
   el.style.animation = 'none';
   void el.offsetWidth;
   el.style.animation = 'shake 0.45s ease';
-  setTimeout(() => el.style.animation = '', 500);
+  setTimeout(() => el.style.animation = '', 3000);
 }
 </script>
 </body>

@@ -12,7 +12,7 @@ import gradio as gr
 from diffusers.image_processor import VaeImageProcessor
 from huggingface_hub import snapshot_download
 from PIL import Image
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request, BackgroundTasks
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, JSONResponse
 from starlette.applications import Starlette
@@ -42,8 +42,8 @@ def parse_args():
         default="resource/demo/output",
         help="The output directory where the model predictions will be written.",
     )
-    parser.add_argument("--width", type=int, default=512)
-    parser.add_argument("--height", type=int, default=768)
+    parser.add_argument("--width", type=int, default=768)
+    parser.add_argument("--height", type=int, default=1024)
     parser.add_argument("--mixed_precision", type=str, default="bf16", choices=["no", "fp16", "bf16"])
     parser.add_argument("--allow_tf32", action="store_true", default=True)
     
@@ -139,7 +139,34 @@ with gr.Blocks(title="WearCast — Virtual Try-On", head=head_html) as demo:
     gr.HTML(body_content)
 
 
-async def tryon_api(request: Request):
+# --- Job Polling Infrastructure ---
+active_jobs = {}
+
+def background_tryon(job_id, person_path, cloth_path, cloth_type, steps, cfg, seed):
+    try:
+        url, fit = process_tryon(person_path, cloth_path, cloth_type, steps, cfg, seed)
+        active_jobs[job_id] = {
+            "status": "success",
+            "result_url": url,
+            "fit_analysis": fit
+        }
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        active_jobs[job_id] = {
+            "status": "error",
+            "message": str(e)
+        }
+    finally:
+        # Cleanup temp files if they were created
+        if "temp_" in person_path and os.path.exists(person_path):
+            try: os.remove(person_path)
+            except: pass
+        if "temp_" in cloth_path and os.path.exists(cloth_path):
+            try: os.remove(cloth_path)
+            except: pass
+
+async def tryon_api(request: Request, background_tasks: BackgroundTasks):
     try:
         form = await request.form()
         
@@ -152,16 +179,33 @@ async def tryon_api(request: Request):
             
         # Get fields with defaults
         cloth_type = form.get("cloth_type", "upper")
-        steps = int(form.get("steps", 20))
+        steps = int(form.get("steps", 25)) # Restored to 25 for quality/duration
         cfg = float(form.get("cfg", 2.5))
         seed = int(form.get("seed", 42))
         
-        url, fit = process_tryon(person.file, cloth.file, cloth_type, steps, cfg, seed)
-        return JSONResponse(content={"status": "success", "result_url": url, "fit_analysis": fit})
+        # Save files to temp for background processing
+        job_id = str(uuid.uuid4())
+        person_path = f"temp_p_{job_id}.png"
+        cloth_path = f"temp_c_{job_id}.png"
+        
+        with open(person_path, "wb") as f: f.write(await person.read())
+        with open(cloth_path, "wb") as f: f.write(await cloth.read())
+        
+        active_jobs[job_id] = {"status": "processing"}
+        background_tasks.add_task(background_tryon, job_id, person_path, cloth_path, cloth_type, steps, cfg, seed)
+        
+        return JSONResponse(content={"status": "queued", "job_id": job_id})
     except Exception as e:
         import traceback
         traceback.print_exc()
         return JSONResponse(status_code=500, content={"status": "error", "message": f"Server Error: {str(e)}"})
+
+async def job_status_api(request: Request):
+    job_id = request.path_params.get("job_id")
+    job = active_jobs.get(job_id)
+    if not job:
+        return JSONResponse(status_code=404, content={"status": "error", "message": "Job not found"})
+    return JSONResponse(content=job)
 
 
 if __name__ == "__main__":
@@ -182,6 +226,7 @@ if __name__ == "__main__":
     os.makedirs(args.output_dir, exist_ok=True)
     app.mount("/outputs", StaticFiles(directory=args.output_dir), name="outputs")
     app.add_route("/api/wearcast/process", tryon_api, methods=["POST"])
+    app.add_route("/api/wearcast/status/{job_id}", job_status_api, methods=["GET"])
     
     print("WearCast API is now active at /api/wearcast/process")
     

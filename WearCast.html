@@ -1011,7 +1011,7 @@
     
     formData.append('cloth', garmentFile);
     formData.append('cloth_type', currentClothType);
-    formData.append('steps', 20); // Faster for web demo
+    formData.append('steps', 25); // Higher quality for WearCast
     formData.append('cfg', 2.5);
     formData.append('seed', Math.floor(Math.random() * 10000));
 
@@ -1023,10 +1023,25 @@
 
         const data = await response.json();
         
-        if (data.status === 'success') {
-            applyResults(data);
+        if (data.status === 'queued') {
+            const jobId = data.job_id;
+            // Polling loop
+            while (true) {
+                await new Promise(r => setTimeout(r, 4000));
+                const pollRes = await fetch(`/api/wearcast/status/${jobId}`);
+                if (!pollRes.ok) continue;
+
+                const statusData = await pollRes.json();
+                if (statusData.status === 'success') {
+                    applyResults(statusData);
+                    break;
+                } else if (statusData.status === 'error') {
+                    alert("Error: " + statusData.message);
+                    break;
+                }
+            }
         } else {
-            alert("Error: " + data.message);
+            alert("Error: " + (data.message || "Failed to start processing"));
         }
     } catch (error) {
         console.error("Tryon failed:", error);
