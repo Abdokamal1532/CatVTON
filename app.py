@@ -42,8 +42,8 @@ def parse_args():
         default="resource/demo/output",
         help="The output directory where the model predictions will be written.",
     )
-    parser.add_argument("--width", type=int, default=768)
-    parser.add_argument("--height", type=int, default=1024)
+    parser.add_argument("--width", type=int, default=512)
+    parser.add_argument("--height", type=int, default=768)
     parser.add_argument("--mixed_precision", type=str, default="bf16", choices=["no", "fp16", "bf16"])
     parser.add_argument("--allow_tf32", action="store_true", default=True)
     

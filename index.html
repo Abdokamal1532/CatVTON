@@ -668,7 +668,7 @@ window.startTryOn = async function() {
     stageIdx++;
     if (stageIdx < STAGES.length) setStage(stageIdx);
     else clearInterval(timerB);
-  }, 3800);
+  }, 12000);
 
   // Build FormData — matches app.py /api/tryon exactly
   const fd = new FormData();
