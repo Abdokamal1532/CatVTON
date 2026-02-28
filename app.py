@@ -145,24 +145,16 @@ app = demo.app
 os.makedirs(args.output_dir, exist_ok=True)
 app.mount("/outputs", StaticFiles(directory=args.output_dir), name="outputs")
 
-async def tryon_api(request):
+@app.post("/api/tryon")
+async def tryon_api(
+    person: UploadFile = File(...),
+    cloth: UploadFile = File(...),
+    cloth_type: str = Form("upper"),
+    steps: int = Form(50),
+    cfg: float = Form(2.5),
+    seed: int = Form(42)
+):
     try:
-        from starlette.datastructures import FormData
-        form = await request.form()
-        
-        # Get files
-        person = form.get("person")
-        cloth = form.get("cloth")
-        
-        if not person or not cloth:
-            return JSONResponse(status_code=400, content={"status": "error", "message": "Missing character or garment image"})
-            
-        # Get fields with defaults
-        cloth_type = form.get("cloth_type", "upper")
-        steps = int(form.get("steps", 50))
-        cfg = float(form.get("cfg", 2.5))
-        seed = int(form.get("seed", 42))
-        
         url, fit = process_tryon(person.file, cloth.file, cloth_type, steps, cfg, seed)
         return JSONResponse(content={"status": "success", "result_url": url, "fit_analysis": fit})
     except Exception as e:
@@ -170,9 +162,6 @@ async def tryon_api(request):
         traceback.print_exc()
         return JSONResponse(status_code=500, content={"status": "error", "message": f"Server Error: {str(e)}"})
 
-# Manually insert a raw Starlette Route at the very top of the routing table.
-# This COMPLETELY bypasses FastAPI's internal 'APIRoute' and its body validation.
-app.router.routes.insert(0, Route("/api/tryon", tryon_api, methods=["POST"]))
 
 if __name__ == "__main__":
     # Launch Gradio with sharing enabled
