@@ -225,8 +225,8 @@ if __name__ == "__main__":
     app = demo.app
     os.makedirs(args.output_dir, exist_ok=True)
     app.mount("/outputs", StaticFiles(directory=args.output_dir), name="outputs")
-    app.add_route("/api/wearcast/process", tryon_api, methods=["POST"])
-    app.add_route("/api/wearcast/status/{job_id}", job_status_api, methods=["GET"])
+    app.add_api_route("/api/wearcast/process", tryon_api, methods=["POST"])
+    app.add_api_route("/api/wearcast/status/{job_id}", job_status_api, methods=["GET"])
     
     print("WearCast API is now active at /api/wearcast/process")
     
