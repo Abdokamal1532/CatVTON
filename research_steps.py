@@ -154,7 +154,7 @@ def psnr(a: np.ndarray, b: np.ndarray):
     mse = np.mean((a.astype(float) - b.astype(float)) ** 2)
     if mse == 0:
         return float("inf")
-    return 20 * np.log10(255.0 / np.sqrt(mse * 255**2))
+    return 20 * np.log10(255.0 / np.sqrt(mse))
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1103,6 +1103,7 @@ def sec14_mask_boundary(person_image, final_image, mask):
 def sec15_resolution_stress(pipeline, person_image, cloth_image, mask_result, weight_dtype, device):
     folder = d("15_resolution_stress")
     print("\n[15] Running resolution stress test...")
+    from utils import compute_vae_encodings, prepare_image, prepare_mask_image
 
     resolutions = [
         (384, 512),   # Small
@@ -1129,8 +1130,6 @@ def sec15_resolution_stress(pipeline, person_image, cloth_image, mask_result, we
             prep_mask  = prepare_mask_image(mask).to(device, dtype=weight_dtype)
             cond_t     = prepare_image(condition_image).to(device, dtype=weight_dtype)
             masked_image = prep_image * (prep_mask < 0.5)
-
-            from utils import compute_vae_encodings, prepare_image, prepare_mask_image
             masked_lat    = compute_vae_encodings(masked_image, pipeline.vae)
             condition_lat = compute_vae_encodings(cond_t, pipeline.vae)
             mask_lat      = torch.nn.functional.interpolate(prep_mask, size=masked_lat.shape[-2:], mode="nearest")
