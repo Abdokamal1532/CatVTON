@@ -668,14 +668,14 @@ window.startTryOn = async function() {
     stageIdx++;
     if (stageIdx < STAGES.length) setStage(stageIdx);
     else clearInterval(timerB);
-  }, 12000);
+  }, 16000);
 
   // Build FormData — matches app.py /api/tryon exactly
   const fd = new FormData();
   fd.append('person',     personFile);
   fd.append('cloth',      garmentFile);
   fd.append('cloth_type', clothType);
-  fd.append('steps',      20);
+  fd.append('steps',      10);
   fd.append('cfg',        2.5);
   fd.append('seed',       Math.floor(Math.random() * 9999));
 
