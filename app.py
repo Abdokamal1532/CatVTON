@@ -15,6 +15,8 @@ from PIL import Image
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, JSONResponse
+from starlette.applications import Starlette
+from starlette.routing import Route
 
 from model.cloth_masker import AutoMasker, vis_mask
 from model.pipeline import CatVTONPipeline
@@ -167,8 +169,13 @@ async def tryon_api(request: Request):
         traceback.print_exc()
         return JSONResponse(status_code=500, content={"status": "error", "message": f"Server Error: {str(e)}"})
 
-# Add route directly to bypass Pydantic validation issues
-app.add_route("/api/tryon", tryon_api, methods=["POST"])
+# Create a separate Starlette app for the API to completely bypass FastAPI validation
+api_app = Starlette(routes=[
+    Route("/tryon", tryon_api, methods=["POST"])
+])
+
+# Mount the Starlette app onto the Gradio FastAPI app
+app.mount("/api", api_app)
 
 if __name__ == "__main__":
     # Launch Gradio with sharing enabled
