@@ -682,7 +682,7 @@ window.startTryOn = async function() {
   try {
     showBanner('info','🔄','Request sent — waiting for the model to finish…');
 
-    const res = await fetch('/api/tryon', { method:'POST', body:fd });
+    const res = await fetch('/api/wearcast/process', { method:'POST', body:fd });
 
     // Parse error details from server
     if (!res.ok) {

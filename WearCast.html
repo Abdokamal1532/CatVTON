@@ -1016,7 +1016,7 @@
     formData.append('seed', Math.floor(Math.random() * 10000));
 
     try {
-        const response = await fetch('/api/tryon', {
+        const response = await fetch('/api/wearcast/process', {
             method: 'POST',
             body: formData
         });
