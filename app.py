@@ -12,7 +12,7 @@ import gradio as gr
 from diffusers.image_processor import VaeImageProcessor
 from huggingface_hub import snapshot_download
 from PIL import Image
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, JSONResponse
 
@@ -144,15 +144,23 @@ os.makedirs(args.output_dir, exist_ok=True)
 app.mount("/outputs", StaticFiles(directory=args.output_dir), name="outputs")
 
 @app.post("/api/tryon")
-async def tryon_api(
-    person: UploadFile = File(...),
-    cloth: UploadFile = File(...),
-    cloth_type: str = Form("upper"),
-    steps: int = Form(50),
-    cfg: float = Form(2.5),
-    seed: int = Form(42)
-):
+async def tryon_api(request: Request):
     try:
+        form = await request.form()
+        
+        # Get files
+        person = form.get("person")
+        cloth = form.get("cloth")
+        
+        if not person or not cloth:
+            return JSONResponse(status_code=400, content={"status": "error", "message": "Missing character or garment image"})
+            
+        # Get fields with defaults
+        cloth_type = form.get("cloth_type", "upper")
+        steps = int(form.get("steps", 50))
+        cfg = float(form.get("cfg", 2.5))
+        seed = int(form.get("seed", 42))
+        
         url, fit = process_tryon(person.file, cloth.file, cloth_type, steps, cfg, seed)
         return {"status": "success", "result_url": url, "fit_analysis": fit}
     except Exception as e:
