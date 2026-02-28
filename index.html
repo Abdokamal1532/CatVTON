@@ -3,17 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WearCast — Easy Virtual Try-On</title>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+<title>WearCast — Virtual Try-On</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #050508;
-    --card: #11111a;
+    --card: #0f0f18;
+    --card2: #13131e;
     --accent: #7c6bf0;
-    --text: #ffffff;
-    --muted: #888899;
-    --border: #222233;
+    --accent-glow: rgba(124,107,240,0.25);
+    --text: #f0eef8;
+    --muted: #777788;
+    --border: #2a2a3e;
     --success: #4ecb87;
+    --error: #f05050;
+    --warning: #f0b429;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -22,336 +26,744 @@
     font-family: 'Outfit', sans-serif;
     background: var(--bg);
     color: var(--text);
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
-    min-height: 100vh;
-    padding: 40px 20px;
+    padding: 32px 16px 60px;
   }
 
-  header {
-    text-align: center;
-    margin-bottom: 40px;
-    animation: fadeInDown 0.6s ease;
+  /* ── HEADER ── */
+  header { text-align: center; margin-bottom: 28px; }
+  .logo { font-size: 26px; font-weight: 600; letter-spacing: -0.02em; }
+  .logo span { color: var(--accent); }
+  .tagline {
+    font-size: 12px; color: var(--muted); margin-top: 6px;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .pill {
+    background: rgba(124,107,240,0.15); color: var(--accent);
+    font-size: 10px; padding: 2px 10px; border-radius: 20px;
+    font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase;
   }
 
-  h1 {
-    font-size: 32px;
-    font-weight: 600;
-    letter-spacing: -0.02em;
-    margin-bottom: 8px;
-  }
-
-  h1 span { color: var(--accent); }
-
-  p.subtitle {
-    color: var(--muted);
-    font-size: 16px;
-  }
-
-  .main-card {
+  /* ── CARD ── */
+  .card {
     background: var(--card);
     border: 1px solid var(--border);
-    border-radius: 24px;
-    width: 100%;
-    max-width: 500px;
-    padding: 32px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-    animation: fadeInUp 0.6s ease;
+    border-radius: 20px;
+    width: 100%; max-width: 500px;
+    padding: 24px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.7);
   }
 
+  /* ── STEP HEADER ── */
+  .step-row {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 14px;
+  }
+  .step-badge {
+    width: 24px; height: 24px; border-radius: 50%;
+    background: var(--accent); color: #fff;
+    font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: background 0.3s;
+  }
+  .step-badge.done { background: var(--success); color: #000; }
+  .step-text { font-size: 13px; font-weight: 500; }
+  .step-sub { font-size: 11px; color: var(--muted); }
+
+  /* ── UPLOAD GRID ── */
   .upload-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin-bottom: 24px;
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 12px; margin-bottom: 18px;
   }
 
+  /*
+   * KEY FIX 1: No overflow:hidden — it was clipping click targets in Gradio iframe.
+   * KEY FIX 2: Input is opacity:0 covering full box, NOT display:none.
+   *            display:none blocks file pickers in sandboxed iframes.
+   */
   .upload-box {
     border: 2px dashed var(--border);
-    border-radius: 16px;
-    padding: 20px 10px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.3s;
-    aspect-ratio: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    border-radius: 14px;
+    aspect-ratio: 3/4;
     position: relative;
-    overflow: hidden;
+    background: var(--card2);
+    transition: border-color 0.25s;
+    /* overflow:hidden is intentionally removed */
   }
 
-  .upload-box:hover { border-color: var(--accent); background: rgba(124,107,240,0.05); }
+  .upload-box:hover { border-color: var(--accent); }
+  .upload-box.ready { border-color: var(--success); border-style: solid; }
 
-  .upload-box img {
+  /* Transparent full-box input — the REAL click target */
+  .upload-box input[type="file"] {
     position: absolute;
     inset: 0;
     width: 100%;
     height: 100%;
-    object-fit: cover;
-    z-index: 2;
-  }
-
-  .upload-icon { font-size: 24px; margin-bottom: 8px; z-index: 1; }
-  .upload-text { font-size: 13px; color: var(--muted); z-index: 1; }
-
-  .btn-tryon {
-    width: 100%;
-    padding: 16px;
-    background: linear-gradient(135deg, var(--accent) 0%, #9d8ff5 100%);
-    border: none;
-    border-radius: 12px;
-    color: #fff;
-    font-size: 16px;
-    font-weight: 600;
+    opacity: 0;
     cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
+    z-index: 10;
   }
+  /* Hide input once image chosen — remove button takes over */
+  .upload-box.ready input[type="file"] { display: none; }
+  
+  /* Ensure preview image is visible and covers the box */
+  .preview-img {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    border-radius: 12px;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+    pointer-events: none;
+    z-index: 5;
+  }
+  .upload-box.ready .preview-img { opacity: 1; }
 
-  .btn-tryon:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(124,107,240,0.3); }
-  .btn-tryon:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+  /* Empty placeholder */
+  .upload-empty {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 6px;
+    pointer-events: none;
+  }
+  .upload-empty-icon { font-size: 28px; opacity: 0.4; }
+  .upload-empty-label { font-size: 12px; color: var(--muted); font-weight: 500; }
+  .upload-empty-hint { font-size: 10px; color: #3a3a5a; }
+  .upload-box.ready .upload-empty { display: none; }
 
-  /* PROGRESS BAR */
-  .progress-container {
-    margin-top: 24px;
+  /*
+   * KEY FIX 3: Preview uses opacity transition, not display:none.
+   * display toggling caused timing bugs where class was added before img.src loaded.
+   */
+  .preview-img {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    border-radius: 12px;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+    pointer-events: none;
+  }
+  .upload-box.ready .preview-img { opacity: 1; }
+
+  /* Bottom info overlay */
+  .img-info {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: linear-gradient(transparent, rgba(5,5,8,0.92));
+    padding: 18px 8px 8px;
+    border-radius: 0 0 12px 12px;
+    opacity: 0; transition: opacity 0.3s;
+    pointer-events: none;
+  }
+  .upload-box.ready .img-info { opacity: 1; }
+  .img-name { font-size: 10px; color: #fff; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .img-meta { font-size: 9px; color: var(--muted); margin-top: 2px; }
+
+  /* Check badge */
+  .img-check {
+    position: absolute; top: 7px; left: 7px;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--success); color: #000;
+    font-size: 10px; font-weight: 700;
+    display: none; align-items: center; justify-content: center;
+    z-index: 5;
+  }
+  .upload-box.ready .img-check { display: flex; }
+
+  /* Remove button */
+  .img-remove {
+    position: absolute; top: 7px; right: 7px;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: rgba(10,10,20,0.85); border: 1px solid var(--border);
+    color: var(--muted); font-size: 12px; cursor: pointer; z-index: 20;
+    display: none; align-items: center; justify-content: center;
+    transition: all 0.2s; line-height: 1;
+  }
+  .upload-box.ready .img-remove { display: flex; }
+  .img-remove:hover { background: var(--error); color: #fff; border-color: var(--error); }
+
+  /* ── DIVIDER ── */
+  .divider { height: 1px; background: var(--border); margin: 18px 0; }
+
+  /* ── CLOTH TYPE ── */
+  .cloth-tabs { display: flex; gap: 8px; margin-bottom: 18px; }
+  .type-btn {
+    flex: 1; padding: 9px 6px; border-radius: 10px;
+    background: var(--card2); border: 1px solid var(--border);
+    color: var(--muted); font-family: 'Outfit', sans-serif;
+    font-size: 11px; cursor: pointer; transition: all 0.2s; text-align: center;
+  }
+  .type-btn:hover { border-color: var(--accent); color: var(--text); }
+  .type-btn.active { background: rgba(124,107,240,0.14); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+
+  /*
+   * KEY FIX 4: Replaced all alert() calls with this in-page banner.
+   * alert() is blocked inside Gradio's iframe sandbox.
+   */
+  .banner {
+    border-radius: 10px; padding: 10px 14px;
+    font-size: 12px; margin-bottom: 14px; line-height: 1.55;
+    display: none; align-items: flex-start; gap: 8px;
+  }
+  .banner.show { display: flex; }
+  .banner.error { background: rgba(240,80,80,0.12);  border: 1px solid rgba(240,80,80,0.3);  color: #f08080; }
+  .banner.warn  { background: rgba(240,180,41,0.10); border: 1px solid rgba(240,180,41,0.3); color: var(--warning); }
+  .banner.info  { background: rgba(124,107,240,0.10);border: 1px solid rgba(124,107,240,0.3);color: #a99ff5; }
+  .banner-icon  { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+
+  /* ── TRY-ON BUTTON ── */
+  .btn-tryon {
+    width: 100%; padding: 14px;
+    background: linear-gradient(135deg, var(--accent), #9d8ff5);
+    border: none; border-radius: 12px; color: #fff;
+    font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 600;
+    cursor: pointer; transition: all 0.25s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-tryon:hover { transform: translateY(-2px); box-shadow: 0 12px 28px var(--accent-glow); }
+  .btn-tryon:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* ── PROCESSING CARD ── */
+  /*
+   * KEY FIX 5: .result-card and .processing-card now use display:none / display:block
+   * properly. The old code added a .visible class but never defined display:block for it.
+   */
+  .processing-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 22px;
+    width: 100%; max-width: 500px; margin-top: 16px;
     display: none;
   }
+  .processing-card.show { display: block; }
 
-  .progress-text {
-    display: flex;
-    justify-content: space-between;
-    font-size: 13px;
-    margin-bottom: 8px;
-    color: var(--muted);
+  .wave-wrap {
+    display: flex; align-items: flex-end; justify-content: center;
+    gap: 4px; height: 48px; margin-bottom: 18px;
   }
+  .wave-bar { width: 5px; background: var(--accent); border-radius: 3px; animation: waveAnim 1.2s ease-in-out infinite; }
+  .wave-bar:nth-child(1){animation-delay:0s}  .wave-bar:nth-child(2){animation-delay:.1s}
+  .wave-bar:nth-child(3){animation-delay:.2s} .wave-bar:nth-child(4){animation-delay:.3s}
+  .wave-bar:nth-child(5){animation-delay:.4s} .wave-bar:nth-child(6){animation-delay:.3s}
+  .wave-bar:nth-child(7){animation-delay:.2s} .wave-bar:nth-child(8){animation-delay:.1s}
+  @keyframes waveAnim { 0%,100%{height:6px;opacity:.35} 50%{height:42px;opacity:1} }
 
-  .progress-bar-track {
-    height: 6px;
-    background: var(--border);
-    border-radius: 3px;
-    overflow: hidden;
+  .dots-row {
+    display: flex; justify-content: space-between; position: relative; margin-bottom: 4px;
   }
-
-  .progress-bar-fill {
-    height: 100%;
-    background: var(--accent);
-    width: 0%;
-    transition: width 0.3s ease;
+  .dots-row::before { content:''; position:absolute; top:10px; left:10px; right:10px; height:2px; background:var(--border); }
+  .dots-row::after  { content:''; position:absolute; top:10px; left:10px; height:2px; background:var(--accent); transition:width 0.8s ease; width:var(--prog,0%); }
+  .dot {
+    width:20px; height:20px; border-radius:50%; background:var(--border); border:2px solid var(--border);
+    position:relative; z-index:1; transition:all 0.3s;
+    display:flex; align-items:center; justify-content:center; font-size:9px; color:transparent;
   }
+  .dot.active { background:var(--accent); border-color:var(--accent); box-shadow:0 0 10px var(--accent-glow); }
+  .dot.done   { background:var(--success); border-color:var(--success); color:#000; font-weight:700; }
 
-  .time-estimate { color: var(--accent); font-weight: 600; }
+  .dots-labels { display:flex; justify-content:space-between; margin-bottom:14px; }
+  .dot-lbl { font-size:9px; color:var(--muted); width:20px; text-align:center; transition:color 0.3s; }
+  .dot-lbl.active { color:var(--accent); } .dot-lbl.done { color:var(--success); }
 
-  /* RESULT AREA */
-  .result-area {
-    margin-top: 32px;
-    display: none;
-    text-align: center;
-    animation: fadeIn 0.8s ease;
+  .prog-track { height:6px; background:var(--border); border-radius:3px; overflow:hidden; margin-bottom:12px; }
+  .prog-fill  { height:100%; background:linear-gradient(90deg,var(--accent),#9d8ff5); width:0%; border-radius:3px; transition:width 0.7s ease; }
+
+  .prog-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+  .prog-status    { font-size:13px; color:var(--text); }
+  .prog-time-txt  { font-size:12px; color:var(--accent); font-weight:500; }
+
+  .countdown-big  { font-size:36px; font-weight:700; color:var(--accent); text-align:center; margin:8px 0 2px; font-variant-numeric:tabular-nums; }
+  .countdown-lbl  { font-size:10px; color:var(--muted); text-align:center; text-transform:uppercase; letter-spacing:.08em; }
+
+  /* ── RESULT CARD ── */
+  .result-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 20px;
+    width: 100%; max-width: 500px; margin-top: 16px;
+    display: none; /* KEY FIX 5 continued */
   }
+  .result-card.show { display: block; }
 
-  .result-img-wrapper {
-    position: relative;
-    border-radius: 20px;
-    overflow: hidden;
-    border: 1px solid var(--border);
-    margin-top: 16px;
+  .result-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .result-title  { font-size:14px; font-weight:600; }
+  .badge-ok { background:rgba(78,203,135,0.15); color:var(--success); font-size:11px; padding:3px 12px; border-radius:20px; font-weight:500; }
+
+  .result-img-wrap { border-radius:14px; overflow:hidden; border:1px solid var(--border); margin-bottom:14px; }
+  .result-img-wrap img { width:100%; display:block; max-height:520px; object-fit:contain; background:var(--card2); }
+
+  .result-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .btn-sec {
+    padding:11px; background:var(--card2); border:1px solid var(--border);
+    border-radius:10px; color:var(--text); font-family:'Outfit',sans-serif;
+    font-size:12px; cursor:pointer; transition:all 0.2s;
+    display:flex; align-items:center; justify-content:center; gap:5px;
   }
-
-  .result-img-wrapper img {
-    width: 100%;
-    display: block;
+  .btn-sec:hover { border-color:var(--accent); color:var(--accent); }
+  .btn-again {
+    grid-column:span 2; padding:12px; background:transparent;
+    border:1px solid var(--border); border-radius:10px; color:var(--muted);
+    font-family:'Outfit',sans-serif; font-size:13px; cursor:pointer; transition:all 0.2s;
   }
+  .btn-again:hover { border-color:var(--accent); color:var(--text); }
 
-  .badge-new {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    background: var(--success);
-    color: #000;
-    font-size: 11px;
-    font-weight: 700;
-    padding: 4px 10px;
-    border-radius: 20px;
-    text-transform: uppercase;
-  }
+  footer { margin-top:36px; font-size:11px; color:#2a2a3e; text-align:center; }
 
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-  @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
-
-  footer {
-    margin-top: auto;
-    padding: 40px;
-    font-size: 12px;
-    color: var(--muted);
-    text-align: center;
-  }
-
-  .step-label {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--muted);
-    margin-bottom: 8px;
-    display: block;
-    text-align: left;
+  @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes shake {
+    0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)}
+    40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)}
   }
 </style>
 </head>
 <body>
 
 <header>
-  <h1>Wear<span>Cast</span></h1>
-  <p class="subtitle">Virtual try-on made incredibly simple.</p>
+  <div class="logo">Wear<span>Cast</span></div>
+  <div class="tagline"><span class="pill">CatVTON</span> Virtual Try-On · AI Powered</div>
 </header>
 
-<div class="main-card">
-  <span class="step-label">1. Upload Photos</span>
+<!-- ── MAIN CARD ── -->
+<div class="card" style="animation:fadeUp 0.4s ease">
+
+  <!-- Step 1 -->
+  <div class="step-row">
+    <div class="step-badge" id="badge1">1</div>
+    <div>
+      <div class="step-text">Upload Photos</div>
+      <div class="step-sub">Your photo + the garment you want to try on</div>
+    </div>
+  </div>
+
   <div class="upload-grid">
-    <div class="upload-box" onclick="document.getElementById('pInput').click()" id="pBox">
-      <div class="upload-icon">👤</div>
-      <div class="upload-text">You</div>
-      <input type="file" id="pInput" hidden accept="image/*" onchange="hPreview(this, 'pBox')">
+
+    <!-- PERSON upload box -->
+    <div class="upload-box" id="pBox">
+      <!--
+        INPUT is opacity:0, covers full box, z-index 10.
+        This is the correct way to make a full-area file picker in iframes.
+      -->
+      <input type="file" id="pInput" accept="image/*"
+             onchange="onFileChosen(this,'pBox','pPreview','pName','pMeta','person')">
+
+      <div class="upload-empty">
+        <div class="upload-empty-icon">🧍</div>
+        <div class="upload-empty-label">Your Photo</div>
+        <div class="upload-empty-hint">Full body · front-facing</div>
+      </div>
+
+      <img class="preview-img" id="pPreview" alt="">
+
+      <div class="img-info">
+        <div class="img-name" id="pName"></div>
+        <div class="img-meta" id="pMeta"></div>
+      </div>
+      <div class="img-check">✓</div>
+      <button class="img-remove"
+              onclick="removeFile(event,'pBox','pInput','pPreview','pName','pMeta','person')">✕</button>
     </div>
-    <div class="upload-box" onclick="document.getElementById('gInput').click()" id="gBox">
-      <div class="upload-icon">👕</div>
-      <div class="upload-text">Cloth</div>
-      <input type="file" id="gInput" hidden accept="image/*" onchange="hPreview(this, 'gBox')">
+
+    <!-- GARMENT upload box -->
+    <div class="upload-box" id="gBox">
+      <input type="file" id="gInput" accept="image/*"
+             onchange="onFileChosen(this,'gBox','gPreview','gName','gMeta','garment')">
+
+      <div class="upload-empty">
+        <div class="upload-empty-icon">👕</div>
+        <div class="upload-empty-label">Garment</div>
+        <div class="upload-empty-hint">Flat-lay or model shot</div>
+      </div>
+
+      <img class="preview-img" id="gPreview" alt="">
+
+      <div class="img-info">
+        <div class="img-name" id="gName"></div>
+        <div class="img-meta" id="gMeta"></div>
+      </div>
+      <div class="img-check">✓</div>
+      <button class="img-remove"
+              onclick="removeFile(event,'gBox','gInput','gPreview','gName','gMeta','garment')">✕</button>
+    </div>
+
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Step 2 -->
+  <div class="step-row" style="margin-bottom:12px">
+    <div class="step-badge">2</div>
+    <div>
+      <div class="step-text">Garment Type</div>
+      <div class="step-sub">What category is this clothing?</div>
     </div>
   </div>
 
-  <button class="btn-tryon" id="runBtn" onclick="run()">
-    Start Try-On
+  <div class="cloth-tabs">
+    <button class="type-btn active" onclick="setType(this,'upper')">👕 Upper Body</button>
+    <button class="type-btn" onclick="setType(this,'lower')">👖 Lower Body</button>
+    <button class="type-btn" onclick="setType(this,'overall')">🥼 Full Outfit</button>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- In-page message banner (replaces alert() which is blocked in Gradio) -->
+  <div class="banner" id="msgBanner">
+    <span class="banner-icon" id="msgIcon">⚠️</span>
+    <span id="msgText">—</span>
+  </div>
+
+  <button class="btn-tryon" id="runBtn" onclick="startTryOn()">
+    ✦ Start Virtual Try-On
   </button>
 
-  <div class="progress-container" id="pContainer">
-    <div class="progress-text">
-      <span id="pStatus">Processing...</span>
-      <span class="time-estimate" id="pTime">Est. 12s</span>
-    </div>
-    <div class="progress-bar-track">
-      <div class="progress-bar-fill" id="pFill"></div>
-    </div>
+</div>
+
+<!-- ── PROCESSING CARD ── -->
+<div class="processing-card" id="procCard">
+  <div class="wave-wrap">
+    <div class="wave-bar"></div><div class="wave-bar"></div>
+    <div class="wave-bar"></div><div class="wave-bar"></div>
+    <div class="wave-bar"></div><div class="wave-bar"></div>
+    <div class="wave-bar"></div><div class="wave-bar"></div>
+  </div>
+
+  <div class="dots-row" id="dotsRow" style="--prog:0%">
+    <div class="dot active" id="d1"></div>
+    <div class="dot" id="d2"></div>
+    <div class="dot" id="d3"></div>
+    <div class="dot" id="d4"></div>
+  </div>
+  <div class="dots-labels">
+    <div class="dot-lbl active" id="l1">Mask</div>
+    <div class="dot-lbl" id="l2">Warp</div>
+    <div class="dot-lbl" id="l3">Blend</div>
+    <div class="dot-lbl" id="l4">Finish</div>
+  </div>
+
+  <div class="prog-track"><div class="prog-fill" id="progFill"></div></div>
+
+  <div class="prog-row">
+    <span class="prog-status" id="progStatus">Initializing model…</span>
+    <span class="prog-time-txt" id="progTimeTxt">⏱ —</span>
+  </div>
+  <div class="countdown-big" id="cdNum">—</div>
+  <div class="countdown-lbl">seconds remaining</div>
+</div>
+
+<!-- ── RESULT CARD ── -->
+<div class="result-card" id="resultCard">
+  <div class="result-header">
+    <span class="result-title">✨ Your Try-On Result</span>
+    <span class="badge-ok">Complete</span>
+  </div>
+  <div class="result-img-wrap">
+    <img id="resultImg" src="" alt="Try-On Result">
+  </div>
+  <div class="result-actions">
+    <button class="btn-sec" onclick="doDownload()">⬇ Download</button>
+    <button class="btn-sec" onclick="doShare()">↑ Copy Link</button>
+    <button class="btn-again" onclick="location.reload()">↩ Try Another Look</button>
   </div>
 </div>
 
-<div class="result-area" id="rArea">
-  <span class="step-label">2. Your Result</span>
-  <div class="result-img-wrapper">
-    <span class="badge-new">Perfect Fit</span>
-    <img src="" id="rImg" alt="Result">
-  </div>
-  <button class="btn-tryon" style="margin-top:16px; background:#222; border:1px solid var(--border);" onclick="location.reload()">
-    Try Another
-  </button>
-</div>
-
-<footer>
-  Powered by CatVTON AI · Stable Diffusion Pipeline
-</footer>
+<footer>Powered by CatVTON AI · Stable Diffusion Inpainting Pipeline</footer>
 
 <script>
-  let pFile = null;
-  let gFile = null;
+/* ──────────────────────────────────
+   STATE
+────────────────────────────────── */
+let personFile  = null;
+let garmentFile = null;
+let clothType   = 'upper';
+let resultUrl   = null;
+let timerA      = null;   // countdown tick
+let timerB      = null;   // stage-advance
 
-  function hPreview(input, boxId) {
-    const file = input.files[0];
-    if (!file) return;
-    if (boxId === 'pBox') pFile = file; else gFile = file;
+/* ──────────────────────────────────
+   UPLOAD HANDLING
+   FIX: onchange on opacity:0 input,
+   class added AFTER img.onload fires
+────────────────────────────────── */
+function onFileChosen(input, boxId, previewId, nameId, metaId, who) {
+  const file = input.files[0];
+  if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = e => {
-      const box = document.getElementById(boxId);
-      const existingImg = box.querySelector('img');
-      if (existingImg) existingImg.src = e.target.result;
-      else {
-        const img = document.createElement('img');
-        img.src = e.target.result;
-        box.appendChild(img);
-      }
+  if (!file.type.startsWith('image/')) {
+    showBanner('error', '❌', 'Only image files are supported (JPG, PNG, WEBP).');
+    input.value = '';
+    return;
+  }
+
+  if (who === 'person')  personFile  = file;
+  else                   garmentFile = file;
+
+  const reader = new FileReader();
+
+  reader.onload = function(ev) {
+    const img = document.getElementById(previewId);
+
+    // Set src first; only mark box ready once image is fully decoded
+    img.onload = function() {
+      console.log('Image loaded successfully:', file.name);
+      document.getElementById(boxId).classList.add('ready');
+      const rawName = file.name;
+      document.getElementById(nameId).textContent =
+        rawName.length > 20 ? rawName.slice(0, 18) + '…' : rawName;
+      document.getElementById(metaId).textContent =
+        fmtBytes(file.size) + '  ·  ' + img.naturalWidth + '×' + img.naturalHeight;
+      checkBothReady();
+      hideBanner();
     };
-    reader.readAsDataURL(file);
+
+    img.src = ev.target.result;
+  };
+
+  reader.onerror = function() {
+    showBanner('error', '❌', 'Could not read the file. Make sure it is a valid image.');
+  };
+
+  reader.readAsDataURL(file);
+}
+
+function removeFile(e, boxId, inputId, previewId, nameId, metaId, who) {
+  e.stopPropagation();
+  e.preventDefault();
+
+  document.getElementById(boxId).classList.remove('ready');
+  document.getElementById(previewId).src = '';
+  document.getElementById(inputId).value = '';
+  document.getElementById(nameId).textContent = '';
+  document.getElementById(metaId).textContent = '';
+
+  if (who === 'person')  personFile  = null;
+  else                   garmentFile = null;
+
+  checkBothReady();
+}
+
+function checkBothReady() {
+  const b = document.getElementById('badge1');
+  if (personFile && garmentFile) {
+    b.textContent = '✓'; b.classList.add('done');
+  } else {
+    b.textContent = '1'; b.classList.remove('done');
+  }
+}
+
+function fmtBytes(b) {
+  return b < 1048576 ? (b/1024).toFixed(0)+' KB' : (b/1048576).toFixed(1)+' MB';
+}
+
+/* ──────────────────────────────────
+   GARMENT TYPE
+────────────────────────────────── */
+function setType(btn, type) {
+  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  clothType = type;
+}
+
+/* ──────────────────────────────────
+   BANNER (replaces alert — blocked in Gradio)
+────────────────────────────────── */
+function showBanner(type, icon, msg) {
+  const el = document.getElementById('msgBanner');
+  el.className = 'banner show ' + type;
+  document.getElementById('msgIcon').textContent = icon;
+  document.getElementById('msgText').textContent = msg;
+}
+function hideBanner() {
+  document.getElementById('msgBanner').className = 'banner';
+}
+
+/* ──────────────────────────────────
+   PROCESSING STAGES
+────────────────────────────────── */
+const STAGES = [
+  { label:'Detecting body keypoints…', pct:8,  secs:14, dotProg:'0%'  },
+  { label:'Warping garment to body…',  pct:35, secs:10, dotProg:'33%' },
+  { label:'Blending textures…',        pct:65, secs:6,  dotProg:'66%' },
+  { label:'Final refinement…',         pct:90, secs:3,  dotProg:'100%'},
+];
+
+function setStage(idx) {
+  const s = STAGES[idx];
+  document.getElementById('dotsRow').style.setProperty('--prog', s.dotProg);
+  document.getElementById('progFill').style.width   = s.pct + '%';
+  document.getElementById('progStatus').textContent = s.label;
+
+  for (let i = 1; i <= 4; i++) {
+    const d = document.getElementById('d' + i);
+    const l = document.getElementById('l' + i);
+    d.classList.remove('active','done'); l.classList.remove('active','done');
+    if (i < idx+1)      { d.classList.add('done');   d.textContent='✓'; l.classList.add('done'); }
+    else if (i===idx+1) { d.classList.add('active'); d.textContent='';  l.classList.add('active'); }
+    else                { d.textContent=''; }
+  }
+  startCountdown(s.secs);
+}
+
+function startCountdown(secs) {
+  clearInterval(timerA);
+  let rem = secs;
+  const tick = () => {
+    document.getElementById('cdNum').textContent        = rem;
+    document.getElementById('progTimeTxt').textContent  = '⏱ ' + rem + 's left';
+    if (rem > 0) rem--; else clearInterval(timerA);
+  };
+  tick();
+  timerA = setInterval(tick, 1000);
+}
+
+function markAllDone() {
+  clearInterval(timerA); clearInterval(timerB);
+  document.getElementById('progFill').style.width  = '100%';
+  document.getElementById('progStatus').textContent = 'Done!';
+  document.getElementById('cdNum').textContent      = '0';
+  document.getElementById('progTimeTxt').textContent= '✓ Finished';
+  document.getElementById('dotsRow').style.setProperty('--prog','100%');
+  for (let i=1;i<=4;i++){
+    const d=document.getElementById('d'+i);
+    d.classList.remove('active'); d.classList.add('done'); d.textContent='✓';
+    document.getElementById('l'+i).classList.add('done');
+  }
+}
+
+/* ──────────────────────────────────
+   MAIN — START TRY-ON
+────────────────────────────────── */
+async function startTryOn() {
+  hideBanner();
+
+  // Validate — give specific messages
+  if (!personFile && !garmentFile) {
+    showBanner('warn','⚠️','Please upload BOTH your photo and a garment image before starting.');
+    shake(document.getElementById('runBtn')); return;
+  }
+  if (!personFile) {
+    showBanner('warn','⚠️','Missing: your photo. Click the left box to upload a full-body front-facing photo.');
+    shake(document.getElementById('pBox')); return;
+  }
+  if (!garmentFile) {
+    showBanner('warn','⚠️','Missing: garment image. Click the right box to upload the clothing item.');
+    shake(document.getElementById('gBox')); return;
   }
 
-  async function run() {
-    if (!pFile || !gFile) {
-      alert("Please upload both photos.");
-      return;
+  // Lock button
+  const btn = document.getElementById('runBtn');
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Sending to server…';
+
+  // Show processing card
+  const procCard = document.getElementById('procCard');
+  procCard.classList.add('show');
+  procCard.scrollIntoView({ behavior:'smooth', block:'nearest' });
+
+  // Start stage animation
+  let stageIdx = 0;
+  setStage(0);
+  timerB = setInterval(() => {
+    stageIdx++;
+    if (stageIdx < STAGES.length) setStage(stageIdx);
+    else clearInterval(timerB);
+  }, 3800);
+
+  // Build FormData — matches app.py /api/tryon exactly
+  const fd = new FormData();
+  fd.append('person',     personFile);
+  fd.append('cloth',      garmentFile);
+  fd.append('cloth_type', clothType);
+  fd.append('steps',      30);
+  fd.append('cfg',        2.5);
+  fd.append('seed',       Math.floor(Math.random() * 9999));
+
+  try {
+    showBanner('info','🔄','Request sent — waiting for the model to finish…');
+
+    const res = await fetch('/api/tryon', { method:'POST', body:fd });
+
+    // Parse error details from server
+    if (!res.ok) {
+      let errMsg = 'Server returned HTTP ' + res.status;
+      try { const j = await res.json(); errMsg = j.message || errMsg; } catch(_){}
+      throw new Error(errMsg);
     }
 
-    const btn = document.getElementById('runBtn');
-    const pBar = document.getElementById('pContainer');
-    const pFill = document.getElementById('pFill');
-    const pTime = document.getElementById('pTime');
-    const pStatus = document.getElementById('pStatus');
+    const data = await res.json();
 
-    btn.disabled = true;
-    pBar.style.display = 'block';
+    if (data.status === 'success') {
+      markAllDone();
+      resultUrl = data.result_url;
+      setTimeout(() => {
+        procCard.classList.remove('show');
+        hideBanner();
+        showResult(resultUrl);
+      }, 900);
 
-    const formData = new FormData();
-    formData.append('person', pFile);
-    formData.append('cloth', gFile);
-    formData.append('cloth_type', 'upper');
-    formData.append('steps', 30);
-    formData.append('cfg', 2.5);
-    formData.append('seed', Math.floor(Math.random() * 1000));
-
-    // Progress simulation
-    let progress = 0;
-    let secondsLeft = 15;
-    const interval = setInterval(() => {
-      if (progress < 90) {
-        progress += 5 + Math.random() * 5;
-        if (progress > 90) progress = 90;
-        pFill.style.width = progress + '%';
-        
-        if (secondsLeft > 1) {
-            secondsLeft--;
-            pTime.textContent = `Est. ${secondsLeft}s`;
-        }
-      }
-      
-      if (progress > 20) pStatus.textContent = "Warping garment...";
-      if (progress > 50) pStatus.textContent = "Blending textures...";
-      if (progress > 80) pStatus.textContent = "Final refining...";
-    }, 800);
-
-    try {
-      const response = await fetch('/api/tryon', {
-        method: 'POST',
-        body: formData
-      });
-      const data = await response.json();
-
-      clearInterval(interval);
-      if (data.status === 'success') {
-        pFill.style.width = '100%';
-        pTime.textContent = "Finished!";
-        pStatus.textContent = "Complete";
-        
-        setTimeout(() => {
-          document.getElementById('rImg').src = data.result_url;
-          document.getElementById('rArea').style.display = 'block';
-          document.querySelector('.main-card').style.opacity = '0.5';
-          document.querySelector('.main-card').style.pointerEvents = 'none';
-          window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'});
-        }, 500);
-      } else {
-        alert("Try-on failed: " + data.message);
-        btn.disabled = false;
-      }
-    } catch (e) {
-      clearInterval(interval);
-      alert("Error connecting to server.");
-      btn.disabled = false;
+    } else {
+      throw new Error(data.message || 'Unknown server error — check the terminal.');
     }
+
+  } catch (err) {
+    clearInterval(timerA); clearInterval(timerB);
+    procCard.classList.remove('show');
+
+    // Detailed error message with hints
+    let detail = err.message;
+    if (!detail || detail.includes('Failed to fetch') || detail.includes('NetworkError')) {
+      detail = 'Cannot reach the server. Make sure app.py is running on this machine.';
+    } else if (detail.includes('CUDA') || detail.includes('out of memory')) {
+      detail = 'GPU out of memory. Try a smaller image (under 1024×1024) and restart the server.';
+    } else if (detail.includes('500')) {
+      detail = 'Server error (500). Check the terminal where app.py is running for the full traceback.';
+    } else if (detail.includes('404')) {
+      detail = 'API endpoint /api/tryon not found (404). Make sure you are using the latest app.py.';
+    }
+
+    showBanner('error','❌', detail);
+    btn.disabled = false;
+    btn.innerHTML = '✦ Start Virtual Try-On';
   }
+}
+
+/* ──────────────────────────────────
+   RESULT
+────────────────────────────────── */
+function showResult(url) {
+  const rc = document.getElementById('resultCard');
+  document.getElementById('resultImg').src = url;
+  rc.classList.add('show');
+  rc.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+function doDownload() {
+  if (!resultUrl) return;
+  const a = document.createElement('a');
+  a.href = resultUrl; a.download = 'wearcast_result.png'; a.click();
+}
+
+function doShare() {
+  const url = window.location.origin + (resultUrl || '');
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url)
+      .then(()  => showBanner('info','📋','Result link copied to clipboard!'))
+      .catch(()  => showBanner('info','🔗','Link: ' + url));
+  } else {
+    showBanner('info','🔗','Link: ' + url);
+  }
+}
+
+/* ──────────────────────────────────
+   SHAKE ANIMATION
+────────────────────────────────── */
+function shake(el) {
+  el.style.animation = 'none';
+  void el.offsetWidth;
+  el.style.animation = 'shake 0.45s ease';
+  setTimeout(() => el.style.animation = '', 500);
+}
 </script>
 </body>
 </html>

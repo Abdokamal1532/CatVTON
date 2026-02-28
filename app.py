@@ -110,40 +110,42 @@ def process_tryon(person_file, cloth_file, cloth_type, steps, cfg, seed):
     
     return f"/outputs/{datetime.now().strftime('%Y%m%d')}/{filename}", fit_data
 
-# Gradio Setup
-def app_gradio():
+# Gradio + FastAPI Setup
+with gr.Blocks(title="WearCast — Virtual Try-On", css="body { background: #13131a; }") as demo:
     with open("index.html", "r", encoding="utf-8") as f:
         html_content = f.read()
+    gr.HTML(html_content)
 
-    with gr.Blocks(title="WearCast — Virtual Try-On", css="body { background: #0a0a0f; }") as demo:
-        gr.HTML(html_content)
+# The Gradio app is a FastAPI instance
+app = demo.app
 
-    # Mount API to Gradio's FastAPI app
-    app = demo.app
-    if app is None:
-        # If demo.app is not yet initialized, we do it at launch
-        pass
-    
-    @demo.app.post("/api/tryon")
-    async def tryon_api(
-        person: UploadFile = File(...),
-        cloth: UploadFile = File(...),
-        cloth_type: str = Form("upper"),
-        steps: int = Form(50),
-        cfg: float = Form(2.5),
-        seed: int = Form(42)
-    ):
-        try:
-            url, fit = process_tryon(person.file, cloth.file, cloth_type, steps, cfg, seed)
-            return {"status": "success", "result_url": url, "fit_analysis": fit}
-        except Exception as e:
-            return JSONResponse(status_code=500, content={"status": "error", "message": str(e)})
+# Serve outputs
+os.makedirs(args.output_dir, exist_ok=True)
+app.mount("/outputs", StaticFiles(directory=args.output_dir), name="outputs")
 
-    # Serve outputs
-    os.makedirs(args.output_dir, exist_ok=True)
-    demo.app.mount("/outputs", StaticFiles(directory=args.output_dir), name="outputs")
-
-    demo.queue().launch(share=True, show_error=True)
+@app.post("/api/tryon")
+async def tryon_api(
+    person: UploadFile = File(...),
+    cloth: UploadFile = File(...),
+    cloth_type: str = Form("upper"),
+    steps: int = Form(50),
+    cfg: float = Form(2.5),
+    seed: int = Form(42)
+):
+    try:
+        url, fit = process_tryon(person.file, cloth.file, cloth_type, steps, cfg, seed)
+        return {"status": "success", "result_url": url, "fit_analysis": fit}
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JSONResponse(status_code=500, content={"status": "error", "message": f"Server Error: {str(e)}"})
 
 if __name__ == "__main__":
-    app_gradio()
+    # Launch Gradio with sharing enabled
+    print("Launching WearCast with Gradio (Public Sharing Enabled)...")
+    demo.queue().launch(
+        share=True,
+        show_error=True,
+        server_name="0.0.0.0",
+        server_port=7860
+    )
