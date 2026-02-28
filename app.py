@@ -111,10 +111,30 @@ def process_tryon(person_file, cloth_file, cloth_type, steps, cfg, seed):
     return f"/outputs/{datetime.now().strftime('%Y%m%d')}/{filename}", fit_data
 
 # Gradio + FastAPI Setup
-with gr.Blocks(title="WearCast — Virtual Try-On", css="body { background: #13131a; }") as demo:
+import re
+
+def get_html_parts():
     with open("index.html", "r", encoding="utf-8") as f:
-        html_content = f.read()
-    gr.HTML(html_content)
+        full_html = f.read()
+    
+    # Simple regex to extract style, script, and body content
+    style_match = re.search(r'<style>(.*?)</style>', full_html, re.DOTALL)
+    script_match = re.search(r'<script>(.*?)</script>', full_html, re.DOTALL)
+    body_match = re.search(r'<body>(.*?)</body>', full_html, re.DOTALL)
+    
+    css = style_match.group(1) if style_match else ""
+    js = script_match.group(1) if script_match else ""
+    body = body_match.group(1) if body_match else full_html
+    
+    return css, js, body
+
+css_content, js_content, body_content = get_html_parts()
+
+# Use 'head' to inject JS/CSS properly in Gradio 4+
+head_html = f"<style>{css_content}</style><script>{js_content}</script>"
+
+with gr.Blocks(title="WearCast — Virtual Try-On", head=head_html) as demo:
+    gr.HTML(body_content)
 
 # The Gradio app is a FastAPI instance
 app = demo.app

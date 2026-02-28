@@ -486,7 +486,7 @@ let timerB      = null;   // stage-advance
    FIX: onchange on opacity:0 input,
    class added AFTER img.onload fires
 ────────────────────────────────── */
-function onFileChosen(input, boxId, previewId, nameId, metaId, who) {
+window.onFileChosen = function(input, boxId, previewId, nameId, metaId, who) {
   const file = input.files[0];
   if (!file) return;
 
@@ -527,7 +527,7 @@ function onFileChosen(input, boxId, previewId, nameId, metaId, who) {
   reader.readAsDataURL(file);
 }
 
-function removeFile(e, boxId, inputId, previewId, nameId, metaId, who) {
+window.removeFile = function(e, boxId, inputId, previewId, nameId, metaId, who) {
   e.stopPropagation();
   e.preventDefault();
 
@@ -559,7 +559,7 @@ function fmtBytes(b) {
 /* ──────────────────────────────────
    GARMENT TYPE
 ────────────────────────────────── */
-function setType(btn, type) {
+window.setType = function(btn, type) {
   document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   clothType = type;
@@ -634,7 +634,7 @@ function markAllDone() {
 /* ──────────────────────────────────
    MAIN — START TRY-ON
 ────────────────────────────────── */
-async function startTryOn() {
+window.startTryOn = async function() {
   hideBanner();
 
   // Validate — give specific messages
@@ -738,13 +738,13 @@ function showResult(url) {
   rc.scrollIntoView({ behavior:'smooth', block:'nearest' });
 }
 
-function doDownload() {
+window.doDownload = function() {
   if (!resultUrl) return;
   const a = document.createElement('a');
   a.href = resultUrl; a.download = 'wearcast_result.png'; a.click();
 }
 
-function doShare() {
+window.doShare = function() {
   const url = window.location.origin + (resultUrl || '');
   if (navigator.clipboard) {
     navigator.clipboard.writeText(url)
