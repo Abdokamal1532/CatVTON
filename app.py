@@ -143,7 +143,6 @@ app = demo.app
 os.makedirs(args.output_dir, exist_ok=True)
 app.mount("/outputs", StaticFiles(directory=args.output_dir), name="outputs")
 
-@app.post("/api/tryon")
 async def tryon_api(request: Request):
     try:
         form = await request.form()
@@ -162,11 +161,14 @@ async def tryon_api(request: Request):
         seed = int(form.get("seed", 42))
         
         url, fit = process_tryon(person.file, cloth.file, cloth_type, steps, cfg, seed)
-        return {"status": "success", "result_url": url, "fit_analysis": fit}
+        return JSONResponse(content={"status": "success", "result_url": url, "fit_analysis": fit})
     except Exception as e:
         import traceback
         traceback.print_exc()
         return JSONResponse(status_code=500, content={"status": "error", "message": f"Server Error: {str(e)}"})
+
+# Add route directly to bypass Pydantic validation issues
+app.add_route("/api/tryon", tryon_api, methods=["POST"])
 
 if __name__ == "__main__":
     # Launch Gradio with sharing enabled
