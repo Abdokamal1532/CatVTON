@@ -130,9 +130,13 @@ class CatVTONPipeline:
         mask = prepare_mask_image(mask).to(self.device, dtype=self.weight_dtype)
         # Mask image
         masked_image = image * (mask < 0.5)
-        # VAE encoding
+        # VAE encoding (CPU -> GPU -> CPU)
+        self.vae.to(self.device)
         masked_latent = compute_vae_encodings(masked_image, self.vae)
         condition_latent = compute_vae_encodings(condition_image, self.vae)
+        self.vae.to("cpu")
+        torch.cuda.empty_cache()
+        
         mask_latent = torch.nn.functional.interpolate(mask, size=masked_latent.shape[-2:], mode="nearest")
         del image, mask, condition_image
         # Concatenate latents
@@ -193,10 +197,14 @@ class CatVTONPipeline:
                 ):
                     progress_bar.update()
 
-        # Decode the final latents
+        # Decode the final latents (CPU -> GPU -> CPU)
         latents = latents.split(latents.shape[concat_dim] // 2, dim=concat_dim)[0]
         latents = 1 / self.vae.config.scaling_factor * latents
+        self.vae.to(self.device)
         image = self.vae.decode(latents.to(self.device, dtype=self.weight_dtype)).sample
+        self.vae.to("cpu")
+        torch.cuda.empty_cache()
+        
         image = (image / 2 + 0.5).clamp(0, 1)
         # we always cast to float32 as this does not cause significant overhead and is compatible with bfloat16
         image = image.cpu().permute(0, 2, 3, 1).float().numpy()
@@ -204,11 +212,20 @@ class CatVTONPipeline:
         
         # Safety Check
         if not self.skip_safety_check:
+            # Safety Check (CPU -> GPU -> CPU)
             current_script_directory = os.path.dirname(os.path.realpath(__file__))
-            nsfw_image = os.path.join(os.path.dirname(current_script_directory), 'resource', 'img', 'NSFW.jpg')
-            nsfw_image = PIL.Image.open(nsfw_image).resize(image[0].size)
+            nsfw_image_path = os.path.join(os.path.dirname(current_script_directory), 'resource', 'img', 'NSFW.jpg')
+            if os.path.exists(nsfw_image_path):
+                nsfw_image = PIL.Image.open(nsfw_image_path).resize(image[0].size)
+            else:
+                # Fallback if image doesn't exist
+                nsfw_image = PIL.Image.new("RGB", image[0].size, (0, 0, 0))
+            
             image_np = np.array(image)
+            self.safety_checker.to(self.device)
             _, has_nsfw_concept = self.run_safety_checker(image=image_np)
+            self.safety_checker.to("cpu")
+            torch.cuda.empty_cache()
             for i, not_safe in enumerate(has_nsfw_concept):
                 if not_safe:
                     image[i] = nsfw_image

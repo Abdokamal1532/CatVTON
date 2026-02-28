@@ -152,7 +152,7 @@ async def tryon_api(request: Request):
             
         # Get fields with defaults
         cloth_type = form.get("cloth_type", "upper")
-        steps = int(form.get("steps", 30))
+        steps = int(form.get("steps", 20))
         cfg = float(form.get("cfg", 2.5))
         seed = int(form.get("seed", 42))
         
