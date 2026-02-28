@@ -138,7 +138,8 @@ head_html = f"<style>{css_content}</style><script>{js_content}</script>"
 with gr.Blocks(title="WearCast — Virtual Try-On", head=head_html) as demo:
     gr.HTML(body_content)
 
-# The Gradio app is a FastAPI instance
+# Initialize Gradio's internal FastAPI app before adding custom routes
+demo.create_app()
 app = demo.app
 
 # Serve outputs
