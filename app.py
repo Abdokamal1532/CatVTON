@@ -27,7 +27,7 @@ def parse_args():
     parser.add_argument(
         "--base_model_path",
         type=str,
-        default="booksforcharlie/stable-diffusion-inpainting",
+        default="runwayml/stable-diffusion-inpainting",
         help="The path to the base model to use for evaluation."
     )
     parser.add_argument(
@@ -138,13 +138,6 @@ head_html = f"<style>{css_content}</style><script>{js_content}</script>"
 with gr.Blocks(title="WearCast — Virtual Try-On", head=head_html) as demo:
     gr.HTML(body_content)
 
-# Initialize Gradio's internal FastAPI app before adding custom routes
-demo.create_app()
-app = demo.app
-
-# Serve outputs
-os.makedirs(args.output_dir, exist_ok=True)
-app.mount("/outputs", StaticFiles(directory=args.output_dir), name="outputs")
 
 async def tryon_api(request: Request):
     try:
@@ -170,16 +163,32 @@ async def tryon_api(request: Request):
         traceback.print_exc()
         return JSONResponse(status_code=500, content={"status": "error", "message": f"Server Error: {str(e)}"})
 
-# Add raw route to bypass FastAPI validation logic completely
-app.add_route("/api/wearcast/process", tryon_api, methods=["POST"])
-
 
 if __name__ == "__main__":
     # Launch Gradio with sharing enabled
     print("Launching WearCast with Gradio (Public Sharing Enabled)...")
+    
+    # In Gradio 4, we launch first with prevent_thread_lock=True to access the app instance
     demo.queue().launch(
         share=True,
         show_error=True,
         server_name="0.0.0.0",
-        server_port=7860
+        server_port=7860,
+        prevent_thread_lock=True
     )
+    
+    # Now we can safely mount custom routes on the internal FastAPI app
+    app = demo.app
+    os.makedirs(args.output_dir, exist_ok=True)
+    app.mount("/outputs", StaticFiles(directory=args.output_dir), name="outputs")
+    app.add_route("/api/wearcast/process", tryon_api, methods=["POST"])
+    
+    print("WearCast API is now active at /api/wearcast/process")
+    
+    # Keep the process alive
+    while True:
+        try:
+            import time
+            time.sleep(10)
+        except KeyboardInterrupt:
+            break
