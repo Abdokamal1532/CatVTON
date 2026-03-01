@@ -12,6 +12,10 @@ import gradio as gr
 from diffusers.image_processor import VaeImageProcessor
 from huggingface_hub import snapshot_download
 from PIL import Image
+try:
+    import pillow_avif
+except ImportError:
+    pass
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request, BackgroundTasks
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -94,7 +98,13 @@ def process_tryon(person_file, cloth_file, cloth_type, steps, cfg, seed):
             
         header_p = get_header(person_file)
         header_c = get_header(cloth_file)
-        raise RuntimeError(f"PIL Error: {str(e)}. P_Size={size_p}, C_Size={size_c}. P_Head={header_p}, C_Head={header_c}")
+        
+        msg = f"PIL Error: {str(e)}. P_Size={size_p}, C_Size={size_c}. P_Head={header_p}, C_Head={header_c}"
+        if "avif" in (header_p + header_c).lower():
+            msg += "\n\nCRITICAL: AVIF format detected. BUT standard Pillow lacks AVIF support."
+            msg += "\nFIX: Run 'pip install pillow-avif-plugin' and restart, OR use JPG/PNG."
+            
+        raise RuntimeError(msg)
     
     person_img = resize_and_crop(person_img, (args.width, args.height))
     cloth_img = resize_and_padding(cloth_img, (args.width, args.height))
