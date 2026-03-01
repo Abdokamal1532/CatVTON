@@ -83,7 +83,18 @@ def process_tryon(person_file, cloth_file, cloth_type, steps, cfg, seed):
     except Exception as e:
         size_p = os.path.getsize(person_file) if os.path.exists(person_file) else "N/A"
         size_c = os.path.getsize(cloth_file) if os.path.exists(cloth_file) else "N/A"
-        raise RuntimeError(f"Failed to open images. PIL Error: {str(e)}. Sizes: Person={size_p}, Cloth={size_c}")
+        
+        def get_header(path):
+            if os.path.exists(path) and os.path.getsize(path) > 0:
+                try:
+                    with open(path, "rb") as f:
+                        return f.read(16).hex()
+                except: return "read_err"
+            return "N/A"
+            
+        header_p = get_header(person_file)
+        header_c = get_header(cloth_file)
+        raise RuntimeError(f"PIL Error: {str(e)}. P_Size={size_p}, C_Size={size_c}. P_Head={header_p}, C_Head={header_c}")
     
     person_img = resize_and_crop(person_img, (args.width, args.height))
     cloth_img = resize_and_padding(cloth_img, (args.width, args.height))
@@ -199,16 +210,24 @@ async def tryon_api(request: Request, background_tasks: BackgroundTasks):
         person_path = f"temp_p_{job_id}.png"
         cloth_path = f"temp_c_{job_id}.png"
         
-        # Robust Save
+        # Robust Save + Normalization using PIL
+        from io import BytesIO
         for img_obj, path in [(person, person_path), (cloth, cloth_path)]:
             await img_obj.seek(0)
             data = await img_obj.read()
             if not data:
                 raise ValueError(f"Uploaded file for {path} is empty")
-            with open(path, "wb") as f:
-                f.write(data)
-                f.flush()
-                os.fsync(f.fileno())
+            
+            try:
+                with Image.open(BytesIO(data)) as tmp_img:
+                    # Convert to RGB to strip alpha/weird profiles and save as clean PNG
+                    tmp_img.convert("RGB").save(path, format="PNG")
+            except Exception as e:
+                print(f"PIL stabilization failed for {path}: {e}. Falling back to binary write.")
+                with open(path, "wb") as f:
+                    f.write(data)
+                    f.flush()
+                    os.fsync(f.fileno())
         
         active_jobs[job_id] = {"status": "processing"}
         background_tasks.add_task(background_tryon, job_id, person_path, cloth_path, cloth_type, steps, cfg, seed)
