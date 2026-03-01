@@ -71,8 +71,20 @@ automasker = AutoMasker(
 # --- Try-On Logic (shared by API) ---
 def process_tryon(person_file, cloth_file, cloth_type, steps, cfg, seed):
     # Load and process images
-    person_img = Image.open(person_file).convert("RGB")
-    cloth_img = Image.open(cloth_file).convert("RGB")
+    for f in [person_file, cloth_file]:
+        if not os.path.exists(f):
+            raise FileNotFoundError(f"Image file not found: {f}")
+        if os.path.getsize(f) == 0:
+            raise ValueError(f"Image file is empty: {f}")
+
+    try:
+        person_img = Image.open(person_file).convert("RGB")
+        cloth_img = Image.open(cloth_file).convert("RGB")
+    except Exception as e:
+        import os
+        size_p = os.path.getsize(person_file) if os.path.exists(person_file) else "N/A"
+        size_c = os.path.getsize(cloth_file) if os.path.exists(cloth_file) else "N/A"
+        raise RuntimeError(f"Failed to open images. PIL Error: {str(e)}. Sizes: Person={size_p}, Cloth={size_c}")
     
     person_img = resize_and_crop(person_img, (args.width, args.height))
     cloth_img = resize_and_padding(cloth_img, (args.width, args.height))
@@ -188,8 +200,16 @@ async def tryon_api(request: Request, background_tasks: BackgroundTasks):
         person_path = f"temp_p_{job_id}.png"
         cloth_path = f"temp_c_{job_id}.png"
         
-        with open(person_path, "wb") as f: f.write(await person.read())
-        with open(cloth_path, "wb") as f: f.write(await cloth.read())
+        # Robust Save
+        for img_obj, path in [(person, person_path), (cloth, cloth_path)]:
+            await img_obj.seek(0)
+            data = await img_obj.read()
+            if not data:
+                raise ValueError(f"Uploaded file for {path} is empty")
+            with open(path, "wb") as f:
+                f.write(data)
+                f.flush()
+                os.fsync(f.fileno())
         
         active_jobs[job_id] = {"status": "processing"}
         background_tasks.add_task(background_tryon, job_id, person_path, cloth_path, cloth_type, steps, cfg, seed)
