@@ -81,7 +81,6 @@ def process_tryon(person_file, cloth_file, cloth_type, steps, cfg, seed):
         person_img = Image.open(person_file).convert("RGB")
         cloth_img = Image.open(cloth_file).convert("RGB")
     except Exception as e:
-        import os
         size_p = os.path.getsize(person_file) if os.path.exists(person_file) else "N/A"
         size_c = os.path.getsize(cloth_file) if os.path.exists(cloth_file) else "N/A"
         raise RuntimeError(f"Failed to open images. PIL Error: {str(e)}. Sizes: Person={size_p}, Cloth={size_c}")
